@@ -1,0 +1,13 @@
+ofxGui
+ofxOpenCv
+ofxOsc
+ofxXmlSettings
+ofxAnimationPrimitives
+ofxBlur
+ofxContentsMixer
+ofxCv
+ofxDelaunay
+ofxFlowTools
+ofxGUIVideoPlayer
+ofxMidi
+ofxSyphon
