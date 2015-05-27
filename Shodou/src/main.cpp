@@ -2,12 +2,18 @@
 #include "utils.h"
 #include "gui.h"
 #include "InputImageController.hpp"
+#include "BlobsDataController.hpp"
 #include "ImageProcessing.hpp"
+
 
 class mainApp : public ofBaseApp
 {
     InputVideoController mIVC;
-    ofTexture mTex;
+    BlobsDataController  mBDC;
+    
+    ofTexture mTexCrop, mTexTiltWarp, mTexThreshold;
+    
+    enum mode { ON_SCREEN, PRE_PROCESS, BLOB_CONTROLL, } mMode;
     
 public:
     
@@ -15,33 +21,111 @@ public:
     {
         gui::setup();
         mIVC.load("movie/test.mov");
+        
+        gui::cropXY1.addListener(this, &mainApp::onGuiEvent);
+        gui::cropXY2.addListener(this, &mainApp::onGuiEvent);
+        
+        mMode = PRE_PROCESS;
     }
     
     void update()
     {
         mIVC.update();
         
+        //----------
+        // image processing
+        //----------
         ofPixels& pix = mIVC.getPixelsRef();
         
         mIVC.setFlip(gui::flipH, gui::flipV);
+        
         imp::crop(pix, gui::cropXY1.get(), gui::cropXY2.get());
+        mTexCrop.loadData(pix);
+        
         imp::tiltWarp(pix, gui::warpTiltV);
+        mTexTiltWarp.loadData(pix);
+        
         imp::rgbToGray(pix);
+        
         imp::threshold(pix, gui::blobThreshold);
+        mTexThreshold.loadData(pix);
         
-        
-        mTex.loadData(pix);
-        
-        ofSetWindowTitle(ofToString(ofGetFrameRate()));
+        imp::findContours(pix);
+        mBDC.setSize(imp::cvContourFinder.getWidth(), imp::cvContourFinder.getHeight());
     }
+    
+    
     
     void draw()
     {
-        ofBackground(0, 0, 0);
-//        mIVC.getTextureRef().draw(0, 0);
-        mTex.draw(0, 0);
+        switch (mMode)
+        {
+            case ON_SCREEN:     drawOnScreen(); break;
+            case PRE_PROCESS:   drawPreProcess(); break;
+            case BLOB_CONTROLL: drawBlobControll(); break;
+        }
         
         gui::draw();
+        ofSetWindowTitle(ofToString(ofGetFrameRate()));
+    }
+    
+    void drawOnScreen()
+    {
+        ofBackground(0);
+        ofPushStyle();
+        
+        ofPopStyle();
+    }
+    
+    void drawPreProcess()
+    {
+        ofBackground(80);
+        
+        ofPushStyle();
+        ofDisableAlphaBlending();
+        ofDisableAntiAliasing();
+        
+        // source image
+        ofTexture& tex = mIVC.getTextureRef();
+        float w = tex.getWidth();
+        float h = tex.getHeight();
+        ofSetColor(255, 255, 255);
+        tex.draw(0, 0);
+        
+        // crop window
+        ofNoFill();
+        ofSetLineWidth(1);
+        ofSetColor(0, 255, 0);
+        ofRect(gui::cropXY1.get().x,  gui::cropXY1.get().y,
+               gui::cropXY2.get().x - gui::cropXY1.get().x,
+               gui::cropXY2.get().y - gui::cropXY1.get().y);
+        
+        // tilt warp
+        ofSetColor(255, 255, 255);
+        mTexTiltWarp.draw(0, h + 20);
+        mTexThreshold.draw(0, h + 20 + mTexTiltWarp.getHeight());
+        
+        ofPopStyle();
+    }
+    
+    void drawBlobControll()
+    {
+        ofBackground(30);
+        
+        float w = ofGetWidth();
+        float h = ofGetHeight() * 0.5;
+        
+        // blob image
+        ofSetColor(255, 255, 255);
+        mTexThreshold.draw(0, 0, w, h);
+        imp::cvContourFinder.draw(0, 0, w, h);
+        
+        // detected blobs
+        mBDC.draw(0, h, w, h);
+        
+        ofSetColor(0, 255, 0);
+        ofFill();
+        ofCircle(ofGetMouseX(), ofGetMouseY(), 3);
     }
     
     void exit()
@@ -56,15 +140,59 @@ public:
         switch (key)
         {
             case ' ': mIVC.togglePlay(); break;
-            
-            case '[': mIVC.setFlip(true, true); break;
-            case ']': mIVC.setFlip(false, false); break;
+            case 'f': ofToggleFullscreen(); break;
+                
+            case '1': mMode = ON_SCREEN; break;
+            case '2': mMode = PRE_PROCESS; break;
+            case '3': mMode = BLOB_CONTROLL; break;
+                
+            case '0': gui::toggleDraw(); break;
+        }
+        
+        if (mMode == BLOB_CONTROLL)
+        {
+            switch (key)
+            {
+                case OF_KEY_BACKSPACE:
+                case OF_KEY_DEL:
+                    mBDC.removeBlob(); break;
+            }
         }
     }
     
     void mousePressed(int x, int y, int mouse)
     {
-        cout << x << " " << y << endl;
+        if (mMode == BLOB_CONTROLL)
+        {
+            float targetX = ofMap(x, 0, ofGetWidth(), 0, imp::cvContourFinder.getWidth(), true);
+            float targetY = ofMap(y, 0, ofGetHeight()*0.5, 0, imp::cvContourFinder.getHeight(), true);
+            addBlobAtPoint(targetX, targetY);
+        }
+    }
+    
+    void onGuiEvent(ofVec2f& e)
+    {
+        float w = gui::cropXY2.get().x - gui::cropXY1.get().x;
+        float h = gui::cropXY2.get().y - gui::cropXY1.get().y;
+        allocateTextures(w, h);
+    }
+    
+    void allocateTextures(float w, float h)
+    {
+        mTexCrop.allocate(w, h, GL_RGB);
+        mTexTiltWarp.allocate(w, h, GL_RGB);
+        mTexThreshold.allocate(w, h, GL_RGB);
+    }
+    
+    void addBlobAtPoint(float x, float y)
+    {
+        for (auto& e : imp::cvContourFinder.blobs)
+        {
+            if (e.boundingRect.inside(x, y))
+            {
+                mBDC.addBlob(e);
+            }
+        }
     }
 };
 

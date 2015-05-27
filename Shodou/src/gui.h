@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofxGui.h"
-#include "Constants.h"
+#include "InputImageController.hpp"
 
 namespace gui
 {
@@ -17,6 +17,8 @@ namespace gui
     static ofParameter<float>       warpTiltV;
     static ofParameter<float>       blobThreshold;
     
+    static bool bDraw;
+    
     static void setup()
     {
         group1.setName("PRE-PROCESS");
@@ -30,15 +32,23 @@ namespace gui
         panel.setup("PARAMETERS", GUI_FILENAME);
         panel.add(group1);
         panel.loadFromFile(GUI_FILENAME);
+        
+        bDraw = true;
     }
     
     static void draw()
     {
-        panel.draw();
+        if (bDraw) panel.draw();
     }
     
     static void save()
     {
         panel.saveToFile(GUI_FILENAME);
+    }
+    
+    static bool toggleDraw()
+    {
+        bDraw = !bDraw;
+        return bDraw;
     }
 }

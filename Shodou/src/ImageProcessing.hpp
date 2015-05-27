@@ -10,6 +10,10 @@ namespace ImageProcessing
     using namespace ofxCv;
     using namespace cv;
     
+    // shared values
+    static ofxCvGrayscaleImage  cvGrayImg;
+    static ofxCvContourFinder   cvContourFinder;
+    
     static void masking(ofPixels& pix, int x1, int y1, int x2, int y2)
     {
         const int w = pix.getWidth();
@@ -101,7 +105,11 @@ namespace ImageProcessing
         cv::threshold(tmp, tmp, th, 255, cv::THRESH_BINARY_INV);
     }
 
-    
+    static void findContours(ofPixels& pix)
+    {
+        cvGrayImg.setFromPixels(pix);
+        cvContourFinder.findContours(cvGrayImg, 10, 640*480, 100, true, false);
+    }
 }
 
 namespace imp = ImageProcessing;

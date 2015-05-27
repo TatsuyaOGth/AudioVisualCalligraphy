@@ -2,6 +2,9 @@
 
 #include "ofMain.h"
 
+static const int SOURCE_IMAGE_WIDTH     = 640;
+static const int SOURCE_IMAGE_HEIGHT    = 480;
+
 template <typename sourceType>
 class InputImageController
 {
@@ -58,6 +61,11 @@ public:
         bFlipVertical = vertical;
     }
     
+    bool isFrameNew()
+    {
+        return mSource.isFrameNew();
+    }
+    
     ofPixels& getPixelsRef()
     {
         return mPix;
@@ -70,7 +78,7 @@ public:
     
     int getWidth()
     {
-        return mSource.getWitdth();
+        return mSource.getWidth();
     }
     
     int getHeight()
