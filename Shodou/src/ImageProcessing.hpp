@@ -36,7 +36,12 @@ namespace ImageProcessing
         pix.crop(x1, y1, x2 - x1, y2 - y1);
     }
     
-    static void tiltWarp(ofPixels& pix, double v)
+    static void crop(ofPixels& pix, const ofVec2f& xy1, const ofVec2f& xy2)
+    {
+        crop(pix, xy1.x, xy1.y, xy2.x, xy2.y);
+    }
+    
+    static void tiltWarp(ofPixels& pix, const double v)
     {
         cv::Mat img_src = toCv(pix);
         cv::Vec3b zero(0, 0, 0);

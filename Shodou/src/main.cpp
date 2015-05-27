@@ -1,5 +1,6 @@
 #include "ofMain.h"
 #include "utils.h"
+#include "gui.h"
 #include "InputImageController.hpp"
 #include "ImageProcessing.hpp"
 
@@ -12,8 +13,8 @@ public:
     
     void setup()
     {
+        gui::setup();
         mIVC.load("movie/test.mov");
-        mIVC.setFlip(true, true);
     }
     
     void update()
@@ -22,11 +23,11 @@ public:
         
         ofPixels& pix = mIVC.getPixelsRef();
         
-        
-        imp::crop(pix, 44, 147, 628, 285);
-        imp::tiltWarp(pix, -90);
+        mIVC.setFlip(gui::flipH, gui::flipV);
+        imp::crop(pix, gui::cropXY1.get(), gui::cropXY2.get());
+        imp::tiltWarp(pix, gui::warpTiltV);
         imp::rgbToGray(pix);
-        imp::threshold(pix, ofMap(ofGetMouseX(), 0, ofGetWidth(), 0, 255, true));
+        imp::threshold(pix, gui::blobThreshold);
         
         
         mTex.loadData(pix);
@@ -36,8 +37,16 @@ public:
     
     void draw()
     {
+        ofBackground(0, 0, 0);
 //        mIVC.getTextureRef().draw(0, 0);
         mTex.draw(0, 0);
+        
+        gui::draw();
+    }
+    
+    void exit()
+    {
+        gui::save();
     }
     
     
