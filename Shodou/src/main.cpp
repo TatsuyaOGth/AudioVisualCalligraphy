@@ -1,15 +1,15 @@
 #include "ofMain.h"
 #include "utils.h"
+#include "Constants.h"
 #include "gui.h"
 #include "InputImageController.hpp"
 #include "BlobsDataController.hpp"
 #include "ImageProcessing.hpp"
 
-
 class mainApp : public ofBaseApp
 {
-    InputVideoController mIVC;
-    BlobsDataController  mBDC;
+    InputImageController*    mIIC;
+    BlobsDataController      mBDC;
     
     ofTexture mTexCrop, mTexTiltWarp, mTexThreshold;
     
@@ -19,25 +19,33 @@ public:
     
     void setup()
     {
-        gui::setup();
-        mIVC.load("movie/test.mov");
+        ofSetFrameRate(60);
+        ofSetVerticalSync(true);
+        
+#ifdef USE_CAMERA
+        mIIC = new InputCameraController();
+#else
+        mIIC = new InputVideoController();
+#endif
+        mIIC->setup();
+        gui::setup(mIIC->getWidth(), mIIC->getHeight());
         
         gui::cropXY1.addListener(this, &mainApp::onGuiEvent);
         gui::cropXY2.addListener(this, &mainApp::onGuiEvent);
         
-        mMode = PRE_PROCESS;
+        mMode = ON_SCREEN;
     }
     
     void update()
     {
-        mIVC.update();
+        mIIC->update();
         
         //----------
         // image processing
         //----------
-        ofPixels& pix = mIVC.getPixelsRef();
+        ofPixels& pix = mIIC->getPixelsRef();
         
-        mIVC.setFlip(gui::flipH, gui::flipV);
+        mIIC->setFlip(gui::flipH, gui::flipV);
         
         imp::crop(pix, gui::cropXY1.get(), gui::cropXY2.get());
         mTexCrop.loadData(pix);
@@ -50,7 +58,7 @@ public:
         imp::threshold(pix, gui::blobThreshold);
         mTexThreshold.loadData(pix);
         
-        imp::findContours(pix);
+        imp::findContours(pix, gui::maxNumBlobs);
         mBDC.setSize(imp::cvContourFinder.getWidth(), imp::cvContourFinder.getHeight());
     }
     
@@ -86,7 +94,7 @@ public:
         ofDisableAntiAliasing();
         
         // source image
-        ofTexture& tex = mIVC.getTextureRef();
+        ofTexture& tex = mIIC->getTextureRef();
         float w = tex.getWidth();
         float h = tex.getHeight();
         ofSetColor(255, 255, 255);
@@ -139,7 +147,7 @@ public:
     {
         switch (key)
         {
-            case ' ': mIVC.togglePlay(); break;
+            case 'o': mIIC->togglePlay(); break;
             case 'f': ofToggleFullscreen(); break;
                 
             case '1': mMode = ON_SCREEN; break;

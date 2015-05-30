@@ -35,6 +35,11 @@ namespace ImageProcessing
         }
     }
     
+    static void resize(ofPixels& pix, int width, int height)
+    {
+        pix.resize(width, height);
+    }
+    
     static void crop(ofPixels& pix, int x1, int y1, int x2, int y2)
     {
         pix.crop(x1, y1, x2 - x1, y2 - y1);
@@ -105,10 +110,10 @@ namespace ImageProcessing
         cv::threshold(tmp, tmp, th, 255, cv::THRESH_BINARY_INV);
     }
 
-    static void findContours(ofPixels& pix)
+    static void findContours(ofPixels& pix, int nConsidered)
     {
         cvGrayImg.setFromPixels(pix);
-        cvContourFinder.findContours(cvGrayImg, 10, 640*480, 100, true, false);
+        cvContourFinder.findContours(cvGrayImg, 10, 640*480, nConsidered, true, false);
     }
 }
 
