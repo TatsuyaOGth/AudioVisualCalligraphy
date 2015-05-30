@@ -20,3 +20,9 @@ static const int CAMERA_HEIGHT    = 720;
 //------------------------------------------------------------------------------
 static const string SOURCE_VIDEO = "movie/test.mov";
 
+
+
+// MIDI
+//------------------------------------------------------------------------------
+static const string MIDI_SENDER_PORT_NAME   = "IAC Driver buss 1";
+static const string MIDI_RECEIVER_PORT_NAME = "IAC Driver buss 2";

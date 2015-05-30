@@ -5,6 +5,8 @@
 #include "InputImageController.hpp"
 #include "BlobsDataController.hpp"
 #include "ImageProcessing.hpp"
+#include "MidiSenderController.hpp"
+#include "MIdiReceiverController.hpp"
 
 class mainApp : public ofBaseApp
 {
@@ -22,6 +24,9 @@ public:
         ofSetFrameRate(60);
         ofSetVerticalSync(true);
         
+        //----------
+        // setup source image
+        //----------
 #ifdef USE_CAMERA
         mIIC = new InputCameraController();
 #else
@@ -33,6 +38,17 @@ public:
         gui::cropXY1.addListener(this, &mainApp::onGuiEvent);
         gui::cropXY2.addListener(this, &mainApp::onGuiEvent);
         
+        //----------
+        // setup midi
+        //----------
+        MIDI_SENDER->listPorts();
+        MIDI_SENDER->openPort(MIDI_SENDER_PORT_NAME);
+        MIDI_RECEIVER->openPort(MIDI_RECEIVER_PORT_NAME);
+        ofAddListener(MIDI_RECEIVER->receivedMidiEvent, this, &mainApp::receivedMidiMessage);
+        
+        //----------
+        // init values
+        //----------
         mMode = ON_SCREEN;
     }
     
@@ -80,9 +96,7 @@ public:
     void drawOnScreen()
     {
         ofBackground(0);
-        ofPushStyle();
-        
-        ofPopStyle();
+        // TODO: make visual
     }
     
     void drawPreProcess()
@@ -185,6 +199,16 @@ public:
         allocateTextures(w, h);
     }
     
+    void receivedMidiMessage(ofxMidiMessage & e)
+    {
+        if (e.status == MIDI_NOTE_ON)
+        {
+            MIDI_SENDER->makeNote(64, 100, 1, 20);
+        }
+    }
+    
+    
+    
     void allocateTextures(float w, float h)
     {
         mTexCrop.allocate(w, h, GL_RGB);
@@ -210,6 +234,6 @@ public:
 //========================================================================
 int main( )
 {
-	ofSetupOpenGL(1024,768,OF_WINDOW);
+	ofSetupOpenGL(1280,768,OF_WINDOW);
 	ofRunApp(new mainApp());
 }

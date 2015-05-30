@@ -289,6 +289,8 @@
 		916196C21B109DED00DEF800 /* InputImageController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputImageController.hpp; sourceTree = "<group>"; };
 		916196C31B10AB0500DEF800 /* ImageProcessing.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImageProcessing.hpp; sourceTree = "<group>"; };
 		919C6C861B19B7DC00DD6C35 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
+		919C6C8E1B19C29100DD6C35 /* MidiSenderController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MidiSenderController.hpp; sourceTree = "<group>"; };
+		919C6C8F1B19C29100DD6C35 /* MidiReceiverController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MidiReceiverController.hpp; sourceTree = "<group>"; };
 		91E4DFA41B914CDAD9DC657F /* ftParticleFlow.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ftParticleFlow.h; path = ../../../addons/ofxFlowTools/src/particles/ftParticleFlow.h; sourceTree = SOURCE_ROOT; };
 		938214A2795AA8FED29086DB /* ofxMidiConstants.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxMidiConstants.h; path = ../../../addons/ofxMidi/src/ofxMidiConstants.h; sourceTree = SOURCE_ROOT; };
 		946187321200AC04E570E6EC /* hierarchical_clustering_index.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = hierarchical_clustering_index.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/hierarchical_clustering_index.h; sourceTree = SOURCE_ROOT; };
@@ -1392,6 +1394,8 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				912CB01E1B15BDF000816856 /* gui.h */,
 				916196C31B10AB0500DEF800 /* ImageProcessing.hpp */,
+				919C6C8E1B19C29100DD6C35 /* MidiSenderController.hpp */,
+				919C6C8F1B19C29100DD6C35 /* MidiReceiverController.hpp */,
 				916196C21B109DED00DEF800 /* InputImageController.hpp */,
 				912CB0221B1616C000816856 /* BlobsDataController.hpp */,
 			);
