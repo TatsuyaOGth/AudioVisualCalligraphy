@@ -107,15 +107,6 @@ class InputCameraController : public InputImageController
 {
     vector<ofVideoGrabber> mCam;
     
-private:
-    bool isInitialized()
-    {
-        for (auto& e : mCam)
-        {
-            if (e.isInitialized() == false) return false;
-        }
-        return true;
-    }
     
 public:
     InputCameraController() {}
@@ -145,33 +136,36 @@ public:
     
     void update()
     {
-        int numLoop = 0;
-        const int dstW = CAMERA_WIDTH * mCam.size();
+        const int ch = 3;
+        const int dstW = CAMERA_WIDTH * NUM_CAMERA;
         const int dstH = CAMERA_HEIGHT;
-        unsigned char* margePix = new unsigned char[dstW * dstH * 3];
-        for (auto& e : mCam)
+        unsigned char* margePix = new unsigned char[dstW * dstH * ch];
+        mPix.allocate(dstW, dstH, ch);
+        
+        for (int i = 0; i < NUM_CAMERA; ++i)
         {
+            auto& e = mCam[i];
             e.update();
 
-            const int w = e.getWidth();
-            const int h = e.getHeight();
-            const int c = e.getPixelsRef().getNumChannels();
+            const int w = CAMERA_WIDTH;
+            const int h = CAMERA_HEIGHT;
             unsigned char* camPix = e.getPixelsRef().getPixels();
             for (int y = 0; y < h; ++y)
             {
                 for (int x = 0; x < w; ++x)
                 {
-                    int i = w * y + x;
-                    int j = w * y + x + (w * numLoop);
-                    for (int ch = 0; ch < c; ++ch)
+                    const int index   = w * y + x;
+                    const int offsetx = w * y + (w * i);
+                    const int dstIdx  = index + offsetx;
+                    for (int j = 0; j < ch; ++j)
                     {
-                        margePix[j*c+ch] = camPix[i*c+ch];
+                        mPix[dstIdx*ch+j] = camPix[index*ch+j];
                     }
                 }
             }
-            numLoop++;
         }
-        mPix.setFromPixels(margePix, dstW, dstH, 3);
+        
+//        mPix.setFromPixels(margePix, dstW, dstH, ch);
         mPix.mirror(bFlipHorizon, bFlipVertical);
         mTex.loadData(mPix);
         delete[] margePix;
@@ -209,6 +203,15 @@ public:
         for (auto& e : mCam)
         {
             if (e.isFrameNew() == false) return false;
+        }
+        return true;
+    }
+    
+    bool isInitialized()
+    {
+        for (auto& e : mCam)
+        {
+            if (e.isInitialized() == false) return false;
         }
         return true;
     }

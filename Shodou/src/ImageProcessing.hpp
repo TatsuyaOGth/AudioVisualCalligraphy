@@ -112,6 +112,10 @@ namespace ImageProcessing
 
     static void findContours(ofPixels& pix, int nConsidered)
     {
+        if (!cvGrayImg.bAllocated || cvGrayImg.getWidth() != pix.getWidth() || cvGrayImg.getHeight() != pix.getHeight())
+        {
+            cvGrayImg.allocate(pix.getWidth(), pix.getHeight());
+        }
         cvGrayImg.setFromPixels(pix);
         cvContourFinder.findContours(cvGrayImg, 10, 640*480, nConsidered, true, false);
     }
