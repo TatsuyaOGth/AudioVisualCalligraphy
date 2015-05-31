@@ -149,8 +149,11 @@ public:
         {
             auto& e = mCam[i];
             e.update();
-//            imp::tiltWarp(e.getPixelsRef(), mVerticalWarp);
-            
+        }
+        
+        for (int i = 0; i < NUM_CAMERA; ++i)
+        {
+            auto& e = mCam[i];
             const int w = CAMERA_WIDTH;
             const int h = CAMERA_HEIGHT;
             unsigned char* camPix = e.getPixelsRef().getPixels();

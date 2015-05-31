@@ -15,8 +15,8 @@ namespace gui
     static ofParameter<bool>        flipV;
     static ofParameter<ofVec2f>     cropXY1;
     static ofParameter<ofVec2f>     cropXY2;
-    static ofParameter<float>       warpTiltV;
-    static ofParameter<float>       warpMirror;
+    static ofParameter<float>       warpX;
+    static ofParameter<float>       warpY;
     static ofParameter<float>       blobThreshold;
     static ofParameter<int>         maxNumBlobs;
     
@@ -31,8 +31,8 @@ namespace gui
         group1.add(flipV.set("FLIP_VERTICAL", true));
         group1.add(cropXY1.set("CROP_XY_1", ofVec2f(0, 0), ofVec2f(0, 0), ofVec2f(srcImgW, srcImgH)));
         group1.add(cropXY2.set("CROP_XY_2", ofVec2f(srcImgW, srcImgH), ofVec2f(0, 0), ofVec2f(srcImgW, srcImgH)));
-        group1.add(warpTiltV.set("TILT_WARP", 0, -180, 180));
-        group1.add(warpMirror.set("MIRROR_WARP", 0, -180, 180));
+        group1.add(warpX.set("WARP_X", 0, -180, 180));
+        group1.add(warpY.set("WARP_Y", 0, -180, 180));
         group1.add(blobThreshold.set("THRESHOLD", 127, 0, 255));
         group1.add(maxNumBlobs.set("MAX_NUM_BLOBS", 50, 1, 255));
         

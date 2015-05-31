@@ -14,35 +14,9 @@ namespace ImageProcessing
     static ofxCvGrayscaleImage  cvGrayImg;
     static ofxCvContourFinder   cvContourFinder;
     
-    static void masking(ofPixels& pix, int x1, int y1, int x2, int y2)
-    {
-        const int w = pix.getWidth();
-        const int h = pix.getHeight();
-        const int c = pix.getNumChannels();
-        for (int i = 0; i < h; ++i)
-        {
-            for (int j = 0; j < w; ++j)
-            {
-                const int index = i * w + j;
-                if (i < y1 || i > y2 || j < x1 || j > x2)
-                {
-                    for (int k = 0; k < c; ++k)
-                    {
-                        pix[index * c + k] = 0;
-                    }
-                }
-            }
-        }
-    }
-    
     static void resize(ofPixels& pix, int width, int height)
     {
         pix.resize(width, height);
-    }
-    
-    static void rotate90(ofPixels& pix, int angle)
-    {
-        pix.rotate90(angle);
     }
     
     static void crop(ofPixels& pix, int x1, int y1, int x2, int y2)
@@ -55,11 +29,10 @@ namespace ImageProcessing
         crop(pix, xy1.x, xy1.y, xy2.x, xy2.y);
     }
     
-    static void tiltWarp(ofPixels& pix, const double v)
+    static void warpPerspective(ofPixels& pix, const double vecX, const double vecY)
     {
         cv::Mat img_src = toCv(pix);
-        cv::Vec3b zero(0, 0, 0);
-        cv::Mat_<cv::Vec3b> img_dst(img_src.rows, img_src.cols, zero);
+        cv::Mat img_dst;
         const double w = pix.getWidth();
         const double h = pix.getHeight();
         
@@ -70,63 +43,15 @@ namespace ImageProcessing
         src_pt[2] = cvPoint2D32f(w,    h);
         src_pt[3] = cvPoint2D32f(w,    0.0);
         
-        if (v > 0)
-        {
-            dst_pt[0] = cvPoint2D32f(-v,    0.0);
-            dst_pt[1] = cvPoint2D32f(0.0,   h);
-            dst_pt[2] = cvPoint2D32f(w,     h);
-            dst_pt[3] = cvPoint2D32f(w + v, 0.0);
-        }
-        else {
-            dst_pt[0] = cvPoint2D32f(0.0,   0.0);
-            dst_pt[1] = cvPoint2D32f(v,     h);
-            dst_pt[2] = cvPoint2D32f(w - v, h);
-            dst_pt[3] = cvPoint2D32f(w,     0.0);
-        }
+        dst_pt[0] = cvPoint2D32f( (vecX > 0 ? -vecX  : 0.0     ), (vecY > 0 ? -vecY  : 0.0   ) );
+        dst_pt[1] = cvPoint2D32f( (vecX > 0 ? 0.0    : vecX    ), (vecY > 0 ? h+vecY : h     ) );
+        dst_pt[2] = cvPoint2D32f( (vecX > 0 ? w      : w-vecX  ), (vecY > 0 ? h      : h-vecY) );
+        dst_pt[3] = cvPoint2D32f( (vecX > 0 ? w+vecX : w       ), (vecY > 0 ? 0.0    : vecY  ) );
         
         const cv::Mat homography_matrix = cv::getPerspectiveTransform(src_pt, dst_pt);
         cv::warpPerspective(img_src, img_dst, homography_matrix,img_src.size());
         
-        toOf(img_dst.clone(), pix);
-    }
-    
-    static void mirrorWarp(ofPixels& pix, const double v)
-    {
-        cv::Mat img_src = toCv(pix);
-        cv::Vec3b zero(0, 0, 0);
-        cv::Mat_<cv::Vec3b> img_dst(img_src.rows, img_src.cols, zero);
-        const double w = pix.getWidth();
-        const double h = pix.getHeight();
-        
-        for (int i = 0; i < 2; ++i)
-        {
-            int j = i + 1;
-            cv::Point2f src_pt[4], dst_pt[4];
-            
-            src_pt[0] = cvPoint2D32f(w/2*i,  0.0);
-            src_pt[1] = cvPoint2D32f(w/2*i,  h);
-            src_pt[2] = cvPoint2D32f(w/2*j,  h);
-            src_pt[3] = cvPoint2D32f(w/2*j,  0.0);
-            
-            if (v > 0)
-            {
-                dst_pt[0] = cvPoint2D32f(w/2*i, -v);
-                dst_pt[1] = cvPoint2D32f(w/2*i, h + v);
-                dst_pt[2] = cvPoint2D32f(w/2*j, h);
-                dst_pt[3] = cvPoint2D32f(w/2*j, 0.0);
-            }
-            else {
-                dst_pt[0] = cvPoint2D32f(w/2*i, 0.0);
-                dst_pt[1] = cvPoint2D32f(w/2*i, h);
-                dst_pt[2] = cvPoint2D32f(w/2*j, h + v);
-                dst_pt[3] = cvPoint2D32f(w/2*j, -v);
-            }
-            
-            const cv::Mat homography_matrix = cv::getPerspectiveTransform(src_pt, dst_pt);
-            cv::warpPerspective(img_src, img_dst, homography_matrix,img_src.size());
-        }
-        
-        toOf(img_dst.clone(), pix);
+        toOf(img_dst, pix);
     }
     
     static void rgbToGray(ofPixels& pix)
