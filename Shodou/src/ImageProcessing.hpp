@@ -90,6 +90,45 @@ namespace ImageProcessing
         toOf(img_dst.clone(), pix);
     }
     
+    static void mirrorWarp(ofPixels& pix, const double v)
+    {
+        cv::Mat img_src = toCv(pix);
+        cv::Vec3b zero(0, 0, 0);
+        cv::Mat_<cv::Vec3b> img_dst(img_src.rows, img_src.cols, zero);
+        const double w = pix.getWidth();
+        const double h = pix.getHeight();
+        
+        for (int i = 0; i < 2; ++i)
+        {
+            int j = i + 1;
+            cv::Point2f src_pt[4], dst_pt[4];
+            
+            src_pt[0] = cvPoint2D32f(w/2*i,  0.0);
+            src_pt[1] = cvPoint2D32f(w/2*i,  h);
+            src_pt[2] = cvPoint2D32f(w/2*j,  h);
+            src_pt[3] = cvPoint2D32f(w/2*j,  0.0);
+            
+            if (v > 0)
+            {
+                dst_pt[0] = cvPoint2D32f(w/2*i, -v);
+                dst_pt[1] = cvPoint2D32f(w/2*i, h + v);
+                dst_pt[2] = cvPoint2D32f(w/2*j, h);
+                dst_pt[3] = cvPoint2D32f(w/2*j, 0.0);
+            }
+            else {
+                dst_pt[0] = cvPoint2D32f(w/2*i, 0.0);
+                dst_pt[1] = cvPoint2D32f(w/2*i, h);
+                dst_pt[2] = cvPoint2D32f(w/2*j, h + v);
+                dst_pt[3] = cvPoint2D32f(w/2*j, -v);
+            }
+            
+            const cv::Mat homography_matrix = cv::getPerspectiveTransform(src_pt, dst_pt);
+            cv::warpPerspective(img_src, img_dst, homography_matrix,img_src.size());
+        }
+        
+        toOf(img_dst.clone(), pix);
+    }
+    
     static void rgbToGray(ofPixels& pix)
     {
         const int w = pix.getWidth();

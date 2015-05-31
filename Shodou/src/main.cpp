@@ -57,6 +57,7 @@ public:
         mTexCrop.loadData(pix);
         
         imp::tiltWarp(pix, gui::warpTiltV);
+        imp::mirrorWarp(pix, gui::warpMirror);
         mTexTiltWarp.loadData(pix);
         
         imp::rgbToGray(pix);
