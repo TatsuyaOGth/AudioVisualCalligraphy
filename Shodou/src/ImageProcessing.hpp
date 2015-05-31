@@ -40,6 +40,11 @@ namespace ImageProcessing
         pix.resize(width, height);
     }
     
+    static void rotate90(ofPixels& pix, int angle)
+    {
+        pix.rotate90(angle);
+    }
+    
     static void crop(ofPixels& pix, int x1, int y1, int x2, int y2)
     {
         pix.crop(x1, y1, x2 - x1, y2 - y1);
@@ -67,16 +72,16 @@ namespace ImageProcessing
         
         if (v > 0)
         {
-            dst_pt[0] = cvPoint2D32f(-v, 0.0);
-            dst_pt[1] = cvPoint2D32f(0.0, h);
-            dst_pt[2] = cvPoint2D32f(w, h);
+            dst_pt[0] = cvPoint2D32f(-v,    0.0);
+            dst_pt[1] = cvPoint2D32f(0.0,   h);
+            dst_pt[2] = cvPoint2D32f(w,     h);
             dst_pt[3] = cvPoint2D32f(w + v, 0.0);
         }
         else {
-            dst_pt[0] = cvPoint2D32f(0.0, 0.0);
-            dst_pt[1] = cvPoint2D32f(v, h);
+            dst_pt[0] = cvPoint2D32f(0.0,   0.0);
+            dst_pt[1] = cvPoint2D32f(v,     h);
             dst_pt[2] = cvPoint2D32f(w - v, h);
-            dst_pt[3] = cvPoint2D32f(w, 0.0);
+            dst_pt[3] = cvPoint2D32f(w,     0.0);
         }
         
         const cv::Mat homography_matrix = cv::getPerspectiveTransform(src_pt, dst_pt);

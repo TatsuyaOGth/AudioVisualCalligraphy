@@ -5,8 +5,6 @@
 #include "InputImageController.hpp"
 #include "BlobsDataController.hpp"
 #include "ImageProcessing.hpp"
-#include "MidiSenderController.hpp"
-#include "MIdiReceiverController.hpp"
 
 class mainApp : public ofBaseApp
 {
@@ -39,14 +37,6 @@ public:
         gui::cropXY2.addListener(this, &mainApp::onGuiEvent);
         
         //----------
-        // setup midi
-        //----------
-        MIDI_SENDER->listPorts();
-        MIDI_SENDER->openPort(MIDI_SENDER_PORT_NAME);
-        MIDI_RECEIVER->openPort(MIDI_RECEIVER_PORT_NAME);
-        ofAddListener(MIDI_RECEIVER->receivedMidiEvent, this, &mainApp::receivedMidiMessage);
-        
-        //----------
         // init values
         //----------
         mMode = ON_SCREEN;
@@ -55,7 +45,7 @@ public:
     void update()
     {
         mIIC->update();
-        
+        if (!mIIC->isFrameNew()) return;
         //----------
         // image processing
         //----------
@@ -169,6 +159,9 @@ public:
             case '3': mMode = BLOB_CONTROLL; break;
                 
             case '0': gui::toggleDraw(); break;
+                
+            // test midi
+            case 'm': mBDC.makeNoteRandom(1); break;
         }
         
         if (mMode == BLOB_CONTROLL)
@@ -177,7 +170,8 @@ public:
             {
                 case OF_KEY_BACKSPACE:
                 case OF_KEY_DEL:
-                    mBDC.removeBlob(); break;
+                    mBDC.removeBlob();
+                    break;
             }
         }
     }
@@ -198,16 +192,6 @@ public:
         float h = gui::cropXY2.get().y - gui::cropXY1.get().y;
         allocateTextures(w, h);
     }
-    
-    void receivedMidiMessage(ofxMidiMessage & e)
-    {
-        if (e.status == MIDI_NOTE_ON)
-        {
-            
-            MIDI_SENDER->makeNote(64, 100, 1, 20);
-        }
-    }
-    
     
     
     void allocateTextures(float w, float h)

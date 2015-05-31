@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "Constants.h"
+#include "ImageProcessing.hpp"
 
 class InputImageController
 {
@@ -18,6 +19,8 @@ protected:
     }
     
 public:
+    float mVerticalWarp;
+    
     InputImageController() : bFlipHorizon(false), bFlipVertical(false) {}
     virtual ~InputImageController() {}
     
@@ -107,12 +110,12 @@ class InputCameraController : public InputImageController
 {
     vector<ofVideoGrabber> mCam;
     
-    
 public:
     InputCameraController() {}
     
     void setup()
     {
+        mVerticalWarp = 0;
         mCam.resize(NUM_CAMERA);
         
         vector<ofVideoDevice> devices = mCam[0].listDevices();
@@ -146,7 +149,8 @@ public:
         {
             auto& e = mCam[i];
             e.update();
-
+//            imp::tiltWarp(e.getPixelsRef(), mVerticalWarp);
+            
             const int w = CAMERA_WIDTH;
             const int h = CAMERA_HEIGHT;
             unsigned char* camPix = e.getPixelsRef().getPixels();
@@ -164,8 +168,6 @@ public:
                 }
             }
         }
-        
-//        mPix.setFromPixels(margePix, dstW, dstH, ch);
         mPix.mirror(bFlipHorizon, bFlipVertical);
         mTex.loadData(mPix);
         delete[] margePix;

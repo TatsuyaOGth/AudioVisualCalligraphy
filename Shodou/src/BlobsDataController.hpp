@@ -3,6 +3,8 @@
 #include "ofMain.h"
 #include "utils.h"
 #include "ofxOpenCv.h"
+#include "MidiSenderController.hpp"
+#include "MIdiReceiverController.hpp"
 
 typedef deque<ofxCvBlob> BLOBS_TYPE;
 
@@ -16,6 +18,15 @@ public:
     {
         mWidth = 0;
         mHeight = 0;
+        setupMidi();
+    }
+    
+    void setupMidi()
+    {
+        MIDI_SENDER->listPorts();
+        MIDI_SENDER->openPort(MIDI_SENDER_PORT_NAME);
+        MIDI_RECEIVER->openPort(MIDI_RECEIVER_PORT_NAME);
+        ofAddListener(MIDI_RECEIVER->receivedMidiEvent, this, &BlobsDataController::receivedMidiMessage);
     }
     
     void update()
@@ -57,6 +68,24 @@ public:
         glPopMatrix();
         ofPopStyle();
     }
+    
+    void receivedMidiMessage(ofxMidiMessage & e)
+    {
+        if (e.status == MIDI_NOTE_ON)
+        {
+            
+            //MIDI_SENDER->makeNote(64, 100, 1, 20);
+        }
+    }
+    
+    void makeNoteRandom(int channel)
+    {
+        int shuffle = ofRandom(mBlobs.size());
+        int note = ofMap(mBlobs[shuffle].area, 10*10, 100*100, 86, 32, true);
+        int velo = ofRandom(90, 110);
+        MIDI_SENDER->makeNote(note, velo, channel, 1);
+    }
+    
     
     void setSize(float w, float h)
     {

@@ -10,7 +10,7 @@
 // CAMERA
 //------------------------------------------------------------------------------
 static const int NUM_CAMERA = 2;
-static const int CAMERA_DEVISE_ID[] = {1, 2};
+static const int CAMERA_DEVISE_ID[] = {0, 1};
 static const int CAMERA_WIDTH     = 1280/2;
 static const int CAMERA_HEIGHT    = 720/2;
 
