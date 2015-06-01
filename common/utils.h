@@ -10,3 +10,34 @@
 #define LOG_DEBUG ofLogNotice("[DEBUG]frame:"+ofToString(ofGetFrameNum())+"|"+FILE_AND_LINE)
 
 
+
+static void makeUniqueRandom(vector<int>& dst, int min, int max)
+{
+    if (max <= min)
+    {
+        return dst;
+    }
+    for (int i = min; i < max; ++i)
+    {
+        while(1)
+        {
+            int random = ofRandom(min, max);
+            for (const auto& e : dst)
+            {
+                if (e == random)
+                {
+                    continue;
+                }
+            }
+            dst.push_back(random);
+            break;
+        }
+    }
+}
+
+static vector<int> makeUniqueRandom(int min, int max)
+{
+    vector<int> dst;
+    makeUniqueRandom(dst, min, max);
+    return dst;
+}

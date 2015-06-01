@@ -90,6 +90,7 @@ public:
     
     void play()
     {
+        mSource.setFrame(200);
         mSource.play();
     }
     

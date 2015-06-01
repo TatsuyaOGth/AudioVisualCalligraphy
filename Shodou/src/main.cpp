@@ -46,6 +46,7 @@ public:
     {
         mIIC->update();
         if (!mIIC->isFrameNew()) return;
+        
         //----------
         // image processing
         //----------
@@ -56,7 +57,6 @@ public:
         imp::crop(pix, gui::cropXY1.get(), gui::cropXY2.get());
         mTexCrop.loadData(pix);
         
-//        imp::tiltWarp(pix, gui::warpTiltV);
         imp::warpPerspective(pix, gui::warpX, gui::warpY);
         mTexTiltWarp.loadData(pix);
         
@@ -66,6 +66,10 @@ public:
         mTexThreshold.loadData(pix);
         
         imp::findContours(pix, gui::maxNumBlobs);
+        
+        //----------
+        // update blob data
+        //----------
         mBDC.setSize(imp::cvContourFinder.getWidth(), imp::cvContourFinder.getHeight());
         mBDC.update();
     }
@@ -137,6 +141,12 @@ public:
         // detected blobs
         mBDC.draw(0, h, w, h);
         
+        // draw frame
+        ofNoFill();
+        ofSetColor(127);
+        ofRect(0, 0, w, h);
+        ofRect(0, h, w, h);
+        
         ofSetColor(0, 255, 0);
         ofFill();
         ofCircle(ofGetMouseX(), ofGetMouseY(), 3);
@@ -161,6 +171,12 @@ public:
             case '3': mMode = BLOB_CONTROLL; break;
                 
             case '0': gui::toggleDraw(); break;
+               
+            // sequencer
+            case 'z': mBDC.sequencerTogglePlay(0); break;
+            case 'x': mBDC.sequencerTogglePlay(1); break;
+            case 'c': mBDC.sequencerTogglePlay(2); break;
+            case 'v': mBDC.sequencerTogglePlay(3); break;
                 
             // test midi
             case 'm': mBDC.makeNoteRandom(1); break;

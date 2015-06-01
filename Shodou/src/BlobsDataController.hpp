@@ -22,11 +22,12 @@ namespace sequencerAnimation
     class BlobDrawr : public ofxAnimationPrimitives::Instance
     {
         const BLOB_TYPE& mBlob;
+        ofColor mCol;
     public:
-        BlobDrawr(const BLOB_TYPE& blob) : mBlob(blob) {}
+        BlobDrawr(const BLOB_TYPE& blob, ofColor col) : mBlob(blob), mCol(col) {}
         void draw()
         {
-            ofSetColor(255, getLife() * 255);
+            ofSetColor(mCol, getLife() * 255);
             ofFill();
             ofBeginShape();
             for (const auto& p : mBlob.pts)
@@ -50,8 +51,9 @@ protected:
     float   mWidth, mHeight;
 
 public:
-    Sequencer() : bPlaying(true), mTempo(120), mTime(5) {}
+    Sequencer() : bPlaying(false), mTempo(120), mTime(5) {}
     
+    virtual void setup(){};
     virtual void update(float tick){};
     virtual void emit(const BLOBS_TYPE& blobs){};
     virtual void draw(int x, int y, int w, int h){}
@@ -71,28 +73,38 @@ public:
         int note = ofMap(blob.area, 10*10, 100*100, 86, 32, true);
         int velo = ofRandom(90, 110);
         MIDI_SENDER->makeNote(note, velo, channel, 1);
-        sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(blob)->play(0.5);
     }
 };
 
 class VerticalSequencer : public Sequencer
 {
     float mPos, mLastPos, mLoopTime;
+    int mChannel;
+    ofColor mCol;
     
 public:
-    VerticalSequencer()
+    VerticalSequencer(float loopTime, int channel, ofColor col)
+    {
+        mChannel = channel;
+        mCol.set(col);
+        mLoopTime = loopTime;
+        setup();
+    }
+    
+    void setup()
     {
         mPos = mLastPos = 0;
-        mLoopTime = 60. / mTempo * mTime;
     }
     
     void update(float tick)
     {
-        mPos += tick;
-        if (mPos > mLoopTime)
+        mLastPos = mPos;
+        if (mLastPos > mLoopTime)
         {
             mPos = 0;
+            mLastPos = 0;
         }
+        mPos += tick;
     }
     
     void emit(const BLOBS_TYPE& blobs)
@@ -104,21 +116,111 @@ public:
             const ofPoint& pos = e.centroid;
             if (pos.y > y1 && pos.y <= y2)
             {
-                Sequencer::sendNote(e, 1);
+                Sequencer::sendNote(e, mChannel);
+                sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(e, mCol)->play(0.5);
             }
         }
-        mLastPos = mPos;
     }
     
     void draw(int x, int y, int w, int h)
     {
         ofPushStyle();
-        ofSetColor(0, 255, 255);
+        ofSetColor(mCol, 127);
+        ofFill();
         ofSetLineWidth(1);
-        float posY = ofMap(mPos, 0, mLoopTime, y, y + h);
-        ofLine(x, posY, x + w, posY);
+        float posY1 = ofMap(mLastPos, 0, mLoopTime, y, y + h);
+        float posY2 = ofMap(mPos, 0, mLoopTime, y, y + h);
+        ofRect(x, posY1, x + w, posY2 - posY1);
         ofPopStyle();
     }
+};
+
+class OrdinalSequencer : public Sequencer
+{
+    float mCount;
+    float mDurationToNext;
+    int mCurrentIndex;
+    bool bPlay;
+    float mMaxDurationToNext;
+    int mChannel;
+    ofColor mCol;
+    ofPoint mLastPos, mTargetPos;
+    
+public:
+    OrdinalSequencer(float maxDurationToNext, int channel, ofColor col)
+    {
+        mMaxDurationToNext = maxDurationToNext;
+        mChannel = channel;
+        mCol.set(col);
+        setup();
+    }
+    
+    void setup()
+    {
+        mCurrentIndex = 0;
+        mCount = 0;
+        mDurationToNext = 0;
+        bPlay = true;
+        mLastPos.set(0, 0);
+        mTargetPos.set(0, 0);
+    }
+    
+    void update(float tick)
+    {
+        if (!bPlay)
+        {
+            mCount += tick;
+            if (mDurationToNext < mCount)
+            {
+                bPlay = true;
+            }
+        }
+    }
+    
+    void emit(const BLOBS_TYPE& blobs)
+    {
+        if (bPlay)
+        {
+            if (blobs.empty() || mCurrentIndex >= blobs.size()) return;
+            Sequencer::sendNote(blobs[mCurrentIndex], mChannel);
+            sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(blobs[mCurrentIndex], mCol)->play(0.5);
+            
+            // set duration to next
+            if (mCurrentIndex + 1 >= blobs.size())
+            {
+                setup();
+                bPlaying = false;
+            }
+            else {
+                mLastPos.set(blobs[mCurrentIndex].centroid);
+                mTargetPos.set(blobs[mCurrentIndex + 1].centroid);
+                float dist = ofDist(blobs[mCurrentIndex  ].centroid.x, blobs[mCurrentIndex  ].centroid.y,
+                                    blobs[mCurrentIndex+1].centroid.x, blobs[mCurrentIndex+1].centroid.y);
+                mDurationToNext = (MIN(dist, 100) / 100) * mMaxDurationToNext;
+            }
+            
+            // reset
+            bPlay = false;
+            mCurrentIndex++;
+            mCount = 0;
+        }
+    }
+    
+    void draw(int x, int y, int w, int h)
+    {
+        if (mLastPos.match(mTargetPos) || mDurationToNext == 0) return;
+        float scalex, scaley;
+        if( mWidth != 0 ) { scalex = w/mWidth; } else { scalex = 1.0f; }
+        if( mHeight != 0 ) { scaley = h/mHeight; } else { scaley = 1.0f; }
+        ofPushMatrix();
+        ofTranslate(x, y);
+        ofScale(scalex, scaley);
+        ofSetColor(mCol, 127);
+        ofFill();
+        ofCircle(mLastPos.interpolate(mTargetPos, ofMap(mCount, 0, mDurationToNext, 0, 1)), 3);
+        ofPopMatrix();
+    }
+
 };
 
 
@@ -133,7 +235,8 @@ class BlobsDataController
     BLOBS_TYPE mBlobs;
     float mWidth, mHeight;
     
-    VerticalSequencer* mVertSeq;
+    VerticalSequencer*  mVertSeq;
+    OrdinalSequencer*   mOrdinalSeq;
     vector<Sequencer*> mSeq;
     
 public:
@@ -142,7 +245,9 @@ public:
         mWidth = 0;
         mHeight = 0;
         setupMidi();
-        mSeq.push_back(mVertSeq = new VerticalSequencer());
+        mSeq.push_back(mVertSeq = new VerticalSequencer(2.5, 1, ofColor(0, 255, 255)));
+        mSeq.push_back(mVertSeq = new VerticalSequencer(2.5/4, 2, ofColor(255, 0, 255)));
+        mSeq.push_back(mOrdinalSeq = new OrdinalSequencer(1, 9, ofColor(255, 255, 0)));
     }
     
     void setupMidi()
@@ -158,9 +263,12 @@ public:
         const float tick = ofGetLastFrameTime();
         for (auto& e : mSeq)
         {
-            e->setSize(mWidth, mHeight);
-            e->update(tick);
-            e->emit(mBlobs);
+            if (e->isPlaying())
+            {
+                e->setSize(mWidth, mHeight);
+                e->update(tick);
+                e->emit(mBlobs);
+            }
         }
         sequencerAnimation::manager.update();
     }
@@ -179,7 +287,8 @@ public:
         glScalef( scalex, scaley, 0.0 );
         
         ofNoFill();
-        for( int i=0; i<(int)mBlobs.size(); i++ ) {
+        for( int i=0; i<(int)mBlobs.size(); i++ )
+        {
             ofRect( mBlobs[i].boundingRect.x, mBlobs[i].boundingRect.y,
                    mBlobs[i].boundingRect.width, mBlobs[i].boundingRect.height );
         }
@@ -187,10 +296,12 @@ public:
         // ---------------------------- draw the blobs
         ofSetHexColor(0x00FFFF);
         
-        for( int i=0; i<(int)mBlobs.size(); i++ ) {
+        for( int i=0; i<(int)mBlobs.size(); i++ )
+        {
             ofNoFill();
             ofBeginShape();
-            for( int j=0; j<mBlobs[i].nPts; j++ ) {
+            for( int j=0; j<mBlobs[i].nPts; j++ )
+            {
                 ofVertex( mBlobs[i].pts[j].x, mBlobs[i].pts[j].y );
             }
             ofEndShape();
@@ -225,6 +336,27 @@ public:
         int note = ofMap(mBlobs[shuffle].area, 10*10, 100*100, 86, 32, true);
         int velo = ofRandom(90, 110);
         MIDI_SENDER->makeNote(note, velo, channel, 1);
+    }
+    
+    void sequencerPlay(int sequencerIndex)
+    {
+        if (sequencerIndex < 0 || sequencerIndex >= mSeq.size()) return;
+        mSeq[sequencerIndex]->setup();
+        mSeq[sequencerIndex]->play();
+    }
+    
+    void sequencerStop(int sequencerIndex)
+    {
+        if (sequencerIndex < 0 || sequencerIndex >= mSeq.size()) return;
+        mSeq[sequencerIndex]->setup();
+        mSeq[sequencerIndex]->stop();
+    }
+    
+    void sequencerTogglePlay(int sequencerIndex)
+    {
+        if (sequencerIndex < 0 || sequencerIndex >= mSeq.size()) return;
+        mSeq[sequencerIndex]->setup();
+        mSeq[sequencerIndex]->togglePlay();
     }
     
     void setSize(float w, float h)
