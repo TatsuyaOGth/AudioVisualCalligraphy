@@ -3,15 +3,138 @@
 #include "ofMain.h"
 #include "utils.h"
 #include "ofxOpenCv.h"
+#include "ofxAnimationPrimitives.h"
 #include "MidiSenderController.hpp"
 #include "MIdiReceiverController.hpp"
 
-typedef deque<ofxCvBlob> BLOBS_TYPE;
+typedef ofxCvBlob           BLOB_TYPE;
+typedef deque<BLOB_TYPE>    BLOBS_TYPE;
+
+class BlobsDataController;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  SEQUENCER
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
+namespace sequencerAnimation
+{
+    class BlobDrawr : public ofxAnimationPrimitives::Instance
+    {
+        const BLOB_TYPE& mBlob;
+    public:
+        BlobDrawr(const BLOB_TYPE& blob) : mBlob(blob) {}
+        void draw()
+        {
+            ofSetColor(255, getLife() * 255);
+            ofFill();
+            ofBeginShape();
+            for (const auto& p : mBlob.pts)
+            {
+                ofVertex(p.x, p.y);
+            }
+            ofEndShape();
+        }
+    };
+    
+    static ofxAnimationPrimitives::InstanceManager manager;
+}
+
+
+class Sequencer
+{
+protected:
+    bool    bPlaying;
+    float   mTempo;
+    int     mTime;
+    float   mWidth, mHeight;
+
+public:
+    Sequencer() : bPlaying(true), mTempo(120), mTime(5) {}
+    
+    virtual void update(float tick){};
+    virtual void emit(const BLOBS_TYPE& blobs){};
+    virtual void draw(int x, int y, int w, int h){}
+    
+    void play(){ bPlaying = true; }
+    void stop(){ bPlaying = false; }
+    void togglePlay(){ bPlaying ? stop() : play(); }
+    bool isPlaying(){ return bPlaying; }
+    void setSequencer(float tempo, int time){ mTempo = tempo, mTime = time; }
+    void setSize(float w, float h){ mWidth = w, mHeight = h; }
+    
+    
+    // send midi messages
+    
+    static void sendNote(const BLOB_TYPE& blob, int channel)
+    {
+        int note = ofMap(blob.area, 10*10, 100*100, 86, 32, true);
+        int velo = ofRandom(90, 110);
+        MIDI_SENDER->makeNote(note, velo, channel, 1);
+        sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(blob)->play(0.5);
+    }
+};
+
+class VerticalSequencer : public Sequencer
+{
+    float mPos, mLastPos, mLoopTime;
+    
+public:
+    VerticalSequencer()
+    {
+        mPos = mLastPos = 0;
+        mLoopTime = 60. / mTempo * mTime;
+    }
+    
+    void update(float tick)
+    {
+        mPos += tick;
+        if (mPos > mLoopTime)
+        {
+            mPos = 0;
+        }
+    }
+    
+    void emit(const BLOBS_TYPE& blobs)
+    {
+        float y1 = ofMap(mLastPos, 0, mLoopTime, 0, mHeight);
+        float y2 = ofMap(mPos,     0, mLoopTime, 0, mHeight);
+        for (const auto& e : blobs)
+        {
+            const ofPoint& pos = e.centroid;
+            if (pos.y > y1 && pos.y <= y2)
+            {
+                Sequencer::sendNote(e, 1);
+            }
+        }
+        mLastPos = mPos;
+    }
+    
+    void draw(int x, int y, int w, int h)
+    {
+        ofPushStyle();
+        ofSetColor(0, 255, 255);
+        ofSetLineWidth(1);
+        float posY = ofMap(mPos, 0, mLoopTime, y, y + h);
+        ofLine(x, posY, x + w, posY);
+        ofPopStyle();
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  BLOBS DATA CONTROLLER
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 class BlobsDataController
 {
     BLOBS_TYPE mBlobs;
     float mWidth, mHeight;
+    
+    VerticalSequencer* mVertSeq;
+    vector<Sequencer*> mSeq;
     
 public:
     BlobsDataController()
@@ -19,6 +142,7 @@ public:
         mWidth = 0;
         mHeight = 0;
         setupMidi();
+        mSeq.push_back(mVertSeq = new VerticalSequencer());
     }
     
     void setupMidi()
@@ -31,7 +155,14 @@ public:
     
     void update()
     {
-        
+        const float tick = ofGetLastFrameTime();
+        for (auto& e : mSeq)
+        {
+            e->setSize(mWidth, mHeight);
+            e->update(tick);
+            e->emit(mBlobs);
+        }
+        sequencerAnimation::manager.update();
     }
     
     void draw(int x, int y, int w, int h)
@@ -65,7 +196,17 @@ public:
             ofEndShape();
             
         }
+        
+        sequencerAnimation::manager.draw();
+        
         glPopMatrix();
+        
+        // ------------------------------ draw sequencer
+        for (auto& e : mSeq)
+        {
+            e->draw(x, y, w, h);
+        }
+        
         ofPopStyle();
     }
     
@@ -86,7 +227,6 @@ public:
         MIDI_SENDER->makeNote(note, velo, channel, 1);
     }
     
-    
     void setSize(float w, float h)
     {
         mWidth = w;
@@ -103,7 +243,7 @@ public:
         return mHeight;
     }
     
-    void addBlob(ofxCvBlob& blob)
+    void addBlob(BLOB_TYPE& blob)
     {
         mBlobs.push_back(blob);
     }

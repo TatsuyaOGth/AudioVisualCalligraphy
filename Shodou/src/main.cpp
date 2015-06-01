@@ -67,6 +67,7 @@ public:
         
         imp::findContours(pix, gui::maxNumBlobs);
         mBDC.setSize(imp::cvContourFinder.getWidth(), imp::cvContourFinder.getHeight());
+        mBDC.update();
     }
     
     
