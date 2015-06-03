@@ -22,15 +22,23 @@ public:
     
     
 public:
-    Blob(ofxCvBlob& blob)
+    Blob(ofxCvBlob& blob, float w, float h, float offsetW = 0)
     {
-        this->area          = blob.area;
-        this->length        = blob.length;
         this->hole          = blob.hole;
-        this->pts           = blob.pts;
         this->nPts          = blob.nPts;
-        this->boundingRect  = blob.boundingRect;
-        this->centroid      = blob.centroid;
+        
+        // set value with normalize
+        for (const auto& e : blob.pts)
+        {
+            this->pts.push_back(ofPoint((e.x + offsetW) / w, (e.y) / h));
+        }
+        this->boundingRect.setX((blob.boundingRect.getX() + offsetW) / w);
+        this->boundingRect.setY((blob.boundingRect.getY()) / h);
+        this->boundingRect.setWidth((blob.boundingRect.getWidth()) / w);
+        this->boundingRect.setHeight((blob.boundingRect.getHeight()) / h);
+        this->centroid = ofPoint((blob.centroid.x + offsetW) / w, (blob.centroid.y) / h);
+        this->area = blob.area / (w * h);
+        this->length = blob.length / (w * h);
     }
     
     void addOffsetX(float offsetX)
@@ -323,25 +331,20 @@ public:
     
     void draw(int x, int y, int w, int h)
     {
-        float scalex, scaley;
-        if( mWidth != 0 ) { scalex = w/mWidth; } else { scalex = 1.0f; }
-        if( mHeight != 0 ) { scaley = h/mHeight; } else { scaley = 1.0f; }
-        
         ofPushStyle();
-        // ---------------------------- draw the bounding rectangle
         ofSetHexColor(0xDD00CC);
         glPushMatrix();
         glTranslatef( x, y, 0.0 );
-        glScalef( scalex, scaley, 0.0 );
         
         ofNoFill();
         for( int i=0; i<(int)mBlobs.size(); i++ )
         {
-            ofRect( mBlobs[i].boundingRect.x, mBlobs[i].boundingRect.y,
-                   mBlobs[i].boundingRect.width, mBlobs[i].boundingRect.height );
+            ofRect(mBlobs[i].boundingRect.x * w,
+                   mBlobs[i].boundingRect.y * h,
+                   mBlobs[i].boundingRect.width * w,
+                   mBlobs[i].boundingRect.height * h);
         }
         
-        // ---------------------------- draw the blobs
         ofSetHexColor(0x00FFFF);
         
         for( int i=0; i<(int)mBlobs.size(); i++ )
@@ -350,7 +353,7 @@ public:
             ofBeginShape();
             for( int j=0; j<mBlobs[i].nPts; j++ )
             {
-                ofVertex( mBlobs[i].pts[j].x, mBlobs[i].pts[j].y );
+                ofVertex( mBlobs[i].pts[j].x * w, mBlobs[i].pts[j].y * h );
             }
             ofEndShape();
             
@@ -360,7 +363,6 @@ public:
         
         glPopMatrix();
         
-        // ------------------------------ draw sequencer
         for (auto& e : mSeq)
         {
             e->draw(x, y, w, h);
@@ -423,20 +425,9 @@ public:
         return mHeight;
     }
     
-    void addBlob(BLOB_TYPE& blob)
+    void addBlob(ofxCvBlob& cvBlob, float w, float h, float offsetW)
     {
-        mBlobs.push_back(blob);
-    }
-    
-    void addBlob(ofxCvBlob& cvBlob)
-    {
-        mBlobs.push_back(Blob(cvBlob));
-    }
-    
-    void addBlob(ofxCvBlob& cvBlob, float offsetX)
-    {
-        mBlobs.push_back(Blob(cvBlob));
-        mBlobs.back().addOffsetX(offsetX);
+        mBlobs.push_back(Blob(cvBlob, w, h, offsetW));
     }
     
     void removeBlob()

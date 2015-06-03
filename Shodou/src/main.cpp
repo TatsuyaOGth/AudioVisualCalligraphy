@@ -90,6 +90,7 @@ public:
         // setup blob controller
         //----------
         mBDC.setupMidi(MIDI_SENDER_PORT_NAME, MIDI_RECEIVER_PORT_NAME);
+        mBDC.setSize(CAMERA_WIDTH * mInputImage.size(), CAMERA_HEIGHT);
         
         //----------
         // init values
@@ -125,7 +126,6 @@ public:
         //----------
         // update blob data controller
         //----------
-        mBDC.setSize(imp::cvContourFinder.getWidth(), imp::cvContourFinder.getHeight());
         mBDC.update();
     }
     
@@ -269,6 +269,13 @@ public:
             int sizeIIC = mInputImage.size();
             int targetIIC = x / (ofGetWidth() / sizeIIC);
             ofClamp(targetIIC, 0, sizeIIC);
+            float cfW = 0;
+            float cfH = 0;
+            for (const auto& e : mInputImage)
+            {
+                cfW += e->getCvContourFinder().getWidth();
+                cfH += e->getCvContourFinder().getHeight();
+            }
             ofxCvContourFinder& cf = mInputImage[targetIIC]->getCvContourFinder();
             int pointX = ofGetWidth() / sizeIIC * targetIIC;
             int pointY = 0;
@@ -276,7 +283,16 @@ public:
             int pointH = ofGetHeight() / 2;
             float targetX = ofMap(x, pointX, pointW, 0, cf.getWidth(), true);
             float targetY = ofMap(y, pointY, pointH, 0, cf.getHeight(), true);
-            addBlobAtPoint(cf, cf.getWidth() * targetIIC, targetX, targetY);
+            
+            float offsetW = 0;
+            if (targetIIC > 0)
+            {
+                for (int i = 0; i < mInputImage.size() - 1; ++i)
+                {
+                    offsetW += mInputImage[i]->getCvContourFinder().getWidth() * targetIIC;
+                }
+            }
+            addBlobAtPoint(cf, targetX, targetY, cfW, cfH, offsetW);
         }
     }
     
@@ -288,13 +304,13 @@ public:
         }
     }
     
-    void addBlobAtPoint(ofxCvContourFinder& contourFinder, int offsetX, float x, float y)
+    void addBlobAtPoint(ofxCvContourFinder& contourFinder, float x, float y, float w, float h, float offsetW)
     {
         for (auto& e : contourFinder.blobs)
         {
             if (e.boundingRect.inside(x, y))
             {
-                mBDC.addBlob(e, offsetX);
+                mBDC.addBlob(e, w, h, offsetW);
             }
         }
     }
