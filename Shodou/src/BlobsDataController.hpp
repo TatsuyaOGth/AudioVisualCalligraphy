@@ -7,10 +7,59 @@
 #include "MidiSenderController.hpp"
 #include "MIdiReceiverController.hpp"
 
-typedef ofxCvBlob           BLOB_TYPE;
-typedef deque<BLOB_TYPE>    BLOBS_TYPE;
 
-class BlobsDataController;
+class Blob
+{
+public:
+    float               area;
+    float               length;
+    ofRectangle         boundingRect;
+    ofPoint             centroid;
+    bool                hole;
+    
+    vector <ofPoint>    pts;    // the contour of the blob
+    int                 nPts;   // number of pts;
+    
+    
+public:
+    Blob(ofxCvBlob& blob)
+    {
+        this->area          = blob.area;
+        this->length        = blob.length;
+        this->hole          = blob.hole;
+        this->pts           = blob.pts;
+        this->nPts          = blob.nPts;
+        this->boundingRect  = blob.boundingRect;
+        this->centroid      = blob.centroid;
+    }
+    
+    void addOffsetX(float offsetX)
+    {
+        for (auto& e : pts)
+        {
+            e.x += offsetX;
+        }
+        centroid.x += offsetX;
+        boundingRect.translate(offsetX, 0);
+    }
+    
+    void draw(float x = 0, float y = 0)
+    {
+        ofNoFill();
+        ofSetHexColor(0x00FFFF);
+        ofBeginShape();
+        for (int i = 0; i < nPts; i++){
+            ofVertex(x + pts[i].x, y + pts[i].y);
+        }
+        ofEndShape(true);
+        ofSetHexColor(0xff0099);
+        ofRect(x + boundingRect.x, y + boundingRect.y, boundingRect.width, boundingRect.height);
+    }
+};
+
+
+typedef Blob                BLOB_TYPE;
+typedef deque<BLOB_TYPE>    BLOBS_TYPE;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -244,17 +293,16 @@ public:
     {
         mWidth = 0;
         mHeight = 0;
-        setupMidi();
         mSeq.push_back(mVertSeq = new VerticalSequencer(2.5, 1, ofColor(0, 255, 255)));
         mSeq.push_back(mVertSeq = new VerticalSequencer(2.5/4, 2, ofColor(255, 0, 255)));
         mSeq.push_back(mOrdinalSeq = new OrdinalSequencer(1, 9, ofColor(255, 255, 0)));
     }
     
-    void setupMidi()
+    void setupMidi(const string& senderPoitName, const string& receiverPortName)
     {
         MIDI_SENDER->listPorts();
-        MIDI_SENDER->openPort(MIDI_SENDER_PORT_NAME);
-        MIDI_RECEIVER->openPort(MIDI_RECEIVER_PORT_NAME);
+        MIDI_SENDER->openPort(senderPoitName);
+        MIDI_RECEIVER->openPort(receiverPortName);
         ofAddListener(MIDI_RECEIVER->receivedMidiEvent, this, &BlobsDataController::receivedMidiMessage);
     }
     
@@ -378,6 +426,17 @@ public:
     void addBlob(BLOB_TYPE& blob)
     {
         mBlobs.push_back(blob);
+    }
+    
+    void addBlob(ofxCvBlob& cvBlob)
+    {
+        mBlobs.push_back(Blob(cvBlob));
+    }
+    
+    void addBlob(ofxCvBlob& cvBlob, float offsetX)
+    {
+        mBlobs.push_back(Blob(cvBlob));
+        mBlobs.back().addOffsetX(offsetX);
     }
     
     void removeBlob()

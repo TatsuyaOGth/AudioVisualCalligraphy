@@ -1,19 +1,68 @@
 #include "ofMain.h"
 #include "utils.h"
-#include "Constants.h"
-#include "gui.h"
 #include "InputImageController.hpp"
 #include "BlobsDataController.hpp"
 #include "ImageProcessing.hpp"
+#include "ofxGui.h"
+
+////////////////////////////////////////////////////////////////////////////////
+
+// GENERAL
+//------------------------------------------------------------------------------
+//#define USE_CAMERA
+
+static const int NUM_INPUT = 2;
+
+// CAMERA
+//------------------------------------------------------------------------------
+static const int NUM_CAMERA = NUM_INPUT;
+static const int CAMERA_DEVISE_ID[] = {0, 1};
+static const int CAMERA_WIDTH     = 1280;
+static const int CAMERA_HEIGHT    = 720;
+
+
+
+// VIDEO
+//------------------------------------------------------------------------------
+static const string SOURCE_VIDEO[] = {"movie/test.mov", "movie/test_mini.mov"};
+static const int START_POSITION = 0.5;
+
+
+// MIDI
+//------------------------------------------------------------------------------
+static const string MIDI_SENDER_PORT_NAME   = "IAC Driver buss 1";
+static const string MIDI_RECEIVER_PORT_NAME = "IAC Driver buss 2";
+
+
+// GUU
+//------------------------------------------------------------------------------
+static const string GUI_FILENAME = "settings.xml";
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 class mainApp : public ofBaseApp
 {
-    InputImageController*    mIIC;
+#ifdef USE_CAMERA
+    vector<InputImageController<ofVideoGrabber>*>   mInputImage;
+#else
+    vector<InputImageController<ofVideoPlayer>*>    mInputImage;
+#endif
+    
     BlobsDataController      mBDC;
     
-    ofTexture mTexCrop, mTexTiltWarp, mTexThreshold;
+    ofPixels    mPrePix, mBlobPix;
+    ofTexture   mPreTex, mBlobTex;
     
     enum mode { ON_SCREEN, PRE_PROCESS, BLOB_CONTROLL, } mMode;
+    
+    // parameter for imageprocessing
+    ofxPanel gui;
+    ofParameterGroup mParamGroup;
+    ofParameter<float>  mBlobThreshold;
+    ofParameter<int>    mMaxNumBlobs;
+    bool bDrawGui;
     
 public:
     
@@ -26,49 +75,55 @@ public:
         // setup source image
         //----------
 #ifdef USE_CAMERA
-        mIIC = new InputCameraController();
+        for (int i = 0; i < NUM_INPUT; ++i)
+        {
+            mInputImage.push_back(new InputCameraController(CAMERA_WIDTH, CAMERA_HEIGHT, CAMERA_DEVISE_ID[i]));
+        }
 #else
-        mIIC = new InputVideoController();
+        for (int i = 0; i < NUM_INPUT; ++i)
+        {
+            mInputImage.push_back(new InputVideoController(SOURCE_VIDEO[i]));
+        }
 #endif
-        mIIC->setup();
-        gui::setup(mIIC->getWidth(), mIIC->getHeight());
         
-        gui::cropXY1.addListener(this, &mainApp::onGuiEvent);
-        gui::cropXY2.addListener(this, &mainApp::onGuiEvent);
+        //----------
+        // setup blob controller
+        //----------
+        mBDC.setupMidi(MIDI_SENDER_PORT_NAME, MIDI_RECEIVER_PORT_NAME);
         
         //----------
         // init values
         //----------
         mMode = ON_SCREEN;
+        
+        //----------
+        // setup GUI parameter
+        //----------
+        mParamGroup.setName("PARAMETERS");
+        for (const auto& e : mInputImage)
+        {
+            mParamGroup.add(e->getParameterGroup());
+        }
+        mParamGroup.add(mBlobThreshold.set("MASTER_THRESHOLD", 127, 0, 255));
+        gui.setup(mParamGroup, GUI_FILENAME);
+        gui.loadFromFile(GUI_FILENAME);
+        bDrawGui = true;
+        
+        mBlobThreshold.addListener(this, &mainApp::changedMasterThreshold);
     }
     
     void update()
     {
-        mIIC->update();
-        if (!mIIC->isFrameNew()) return;
+        //----------
+        // make marged input pixel
+        //----------
+        for (auto& e : mInputImage)
+        {
+            e->update();
+        }
         
         //----------
-        // image processing
-        //----------
-        ofPixels& pix = mIIC->getPixelsRef();
-        
-        mIIC->setFlip(gui::flipH, gui::flipV);
-        
-        imp::crop(pix, gui::cropXY1.get(), gui::cropXY2.get());
-        mTexCrop.loadData(pix);
-        
-        imp::warpPerspective(pix, gui::warpX, gui::warpY);
-        mTexTiltWarp.loadData(pix);
-        
-        imp::rgbToGray(pix);
-        
-        imp::threshold(pix, gui::blobThreshold);
-        mTexThreshold.loadData(pix);
-        
-        imp::findContours(pix, gui::maxNumBlobs);
-        
-        //----------
-        // update blob data
+        // update blob data controller
         //----------
         mBDC.setSize(imp::cvContourFinder.getWidth(), imp::cvContourFinder.getHeight());
         mBDC.update();
@@ -85,7 +140,7 @@ public:
             case BLOB_CONTROLL: drawBlobControll(); break;
         }
         
-        gui::draw();
+        if (bDrawGui) gui.draw();
         ofSetWindowTitle(ofToString(ofGetFrameRate()));
     }
     
@@ -98,31 +153,28 @@ public:
     void drawPreProcess()
     {
         ofBackground(80);
-        
+
         ofPushStyle();
         ofDisableAlphaBlending();
         ofDisableAntiAliasing();
         
-        // source image
-        ofTexture& tex = mIIC->getTextureRef();
-        float w = tex.getWidth();
-        float h = tex.getHeight();
         ofSetColor(255, 255, 255);
-        tex.draw(0, 0);
-        
-        // crop window
-        ofNoFill();
-        ofSetLineWidth(1);
-        ofSetColor(0, 255, 0);
-        ofRect(gui::cropXY1.get().x,  gui::cropXY1.get().y,
-               gui::cropXY2.get().x - gui::cropXY1.get().x,
-               gui::cropXY2.get().y - gui::cropXY1.get().y);
-        
-        // tilt warp
-        ofSetColor(255, 255, 255);
-        mTexTiltWarp.draw(0, h + 20);
-        mTexThreshold.draw(0, h + 20 + mTexTiltWarp.getHeight());
-        
+        for (int i = 0; i < mInputImage.size(); ++i)
+        {
+            float offsetY = 0;
+            auto& e = mInputImage[i];
+            float w = e->getResizedPixelsRef().getWidth();
+            float h = e->getResizedPixelsRef().getHeight();
+            float x = w * i;
+            e->getResizedTextureRef().draw(x, 0, w, h);
+            e->drawCropRect(x, 0, w, h);
+            offsetY += h;
+            e->getCropedTextureRef().draw(x, offsetY);
+            offsetY += e->getCropedPixelsRef().getHeight();
+            e->getWarpedTextureRef().draw(x, offsetY);
+            offsetY += e->getWarpedPixelsRef().getHeight();
+            e->getBinaryTextureRef().draw(x, offsetY);
+        }
         ofPopStyle();
     }
     
@@ -132,11 +184,23 @@ public:
         
         float w = ofGetWidth();
         float h = ofGetHeight() * 0.5;
+        float srcW = 0;
+        float srcH = 0;
+        for (const auto& e : mInputImage)
+        {
+            float w = e->getBinaryPixelsRef().getWidth();
+            float h = e->getBinaryPixelsRef().getHeight();
+            if (srcW < w) srcW = w;
+            if (srcH < h) srcH = h;
+        }
         
-        // blob image
-        ofSetColor(255, 255, 255);
-        mTexThreshold.draw(0, 0, w, h);
-        imp::cvContourFinder.draw(0, 0, w, h);
+        for (int i = 0; i < mInputImage.size(); ++i)
+        {            
+            // blob image
+            ofSetColor(255, 255, 255);
+            mInputImage[i]->getBinaryTextureRef().draw(w / 2 * i, 0, w / 2, h);
+            mInputImage[i]->getCvContourFinder().draw(w / 2 * i, 0, w / 2, h);
+        }
         
         // detected blobs
         mBDC.draw(0, h, w, h);
@@ -147,6 +211,7 @@ public:
         ofRect(0, 0, w, h);
         ofRect(0, h, w, h);
         
+        // draw mouse pointer
         ofSetColor(0, 255, 0);
         ofFill();
         ofCircle(ofGetMouseX(), ofGetMouseY(), 3);
@@ -154,7 +219,7 @@ public:
     
     void exit()
     {
-        gui::save();
+        gui.saveToFile(GUI_FILENAME);
     }
     
     
@@ -163,14 +228,17 @@ public:
     {
         switch (key)
         {
-            case 'o': mIIC->togglePlay(); break;
+            case 'o':
+                for (auto& e : mInputImage) e->togglePlay();
+                break;
+                
             case 'f': ofToggleFullscreen(); break;
                 
             case '1': mMode = ON_SCREEN; break;
             case '2': mMode = PRE_PROCESS; break;
             case '3': mMode = BLOB_CONTROLL; break;
                 
-            case '0': gui::toggleDraw(); break;
+            case '0': bDrawGui = !bDrawGui; break;
                
             // sequencer
             case 'z': mBDC.sequencerTogglePlay(0); break;
@@ -198,34 +266,35 @@ public:
     {
         if (mMode == BLOB_CONTROLL)
         {
-            float targetX = ofMap(x, 0, ofGetWidth(), 0, imp::cvContourFinder.getWidth(), true);
-            float targetY = ofMap(y, 0, ofGetHeight()*0.5, 0, imp::cvContourFinder.getHeight(), true);
-            addBlobAtPoint(targetX, targetY);
+            int sizeIIC = mInputImage.size();
+            int targetIIC = x / (ofGetWidth() / sizeIIC);
+            ofClamp(targetIIC, 0, sizeIIC);
+            ofxCvContourFinder& cf = mInputImage[targetIIC]->getCvContourFinder();
+            int pointX = ofGetWidth() / sizeIIC * targetIIC;
+            int pointY = 0;
+            int pointW = pointX + ofGetWidth() / sizeIIC;
+            int pointH = ofGetHeight() / 2;
+            float targetX = ofMap(x, pointX, pointW, 0, cf.getWidth(), true);
+            float targetY = ofMap(y, pointY, pointH, 0, cf.getHeight(), true);
+            addBlobAtPoint(cf, cf.getWidth() * targetIIC, targetX, targetY);
         }
     }
     
-    void onGuiEvent(ofVec2f& e)
+    void changedMasterThreshold(float& e)
     {
-        float w = gui::cropXY2.get().x - gui::cropXY1.get().x;
-        float h = gui::cropXY2.get().y - gui::cropXY1.get().y;
-        allocateTextures(w, h);
+        for (auto& e : mInputImage)
+        {
+            e->setThreshold(mBlobThreshold);
+        }
     }
     
-    
-    void allocateTextures(float w, float h)
+    void addBlobAtPoint(ofxCvContourFinder& contourFinder, int offsetX, float x, float y)
     {
-        mTexCrop.allocate(w, h, GL_RGB);
-        mTexTiltWarp.allocate(w, h, GL_RGB);
-        mTexThreshold.allocate(w, h, GL_RGB);
-    }
-    
-    void addBlobAtPoint(float x, float y)
-    {
-        for (auto& e : imp::cvContourFinder.blobs)
+        for (auto& e : contourFinder.blobs)
         {
             if (e.boundingRect.inside(x, y))
             {
-                mBDC.addBlob(e);
+                mBDC.addBlob(e, offsetX);
             }
         }
     }
