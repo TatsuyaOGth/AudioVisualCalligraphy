@@ -274,7 +274,7 @@ public:
             for (const auto& e : mInputImage)
             {
                 cfW += e->getCvContourFinder().getWidth();
-                cfH += e->getCvContourFinder().getHeight();
+                if (cfH < e->getCvContourFinder().getHeight()) cfH = e->getCvContourFinder().getHeight();
             }
             ofxCvContourFinder& cf = mInputImage[targetIIC]->getCvContourFinder();
             int pointX = ofGetWidth() / sizeIIC * targetIIC;

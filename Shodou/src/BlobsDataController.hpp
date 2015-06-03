@@ -33,10 +33,10 @@ public:
             this->pts.push_back(ofPoint((e.x + offsetW) / w, (e.y) / h));
         }
         this->boundingRect.setX((blob.boundingRect.getX() + offsetW) / w);
-        this->boundingRect.setY((blob.boundingRect.getY()) / h);
-        this->boundingRect.setWidth((blob.boundingRect.getWidth()) / w);
-        this->boundingRect.setHeight((blob.boundingRect.getHeight()) / h);
-        this->centroid = ofPoint((blob.centroid.x + offsetW) / w, (blob.centroid.y) / h);
+        this->boundingRect.setY(blob.boundingRect.getY() / h);
+        this->boundingRect.setWidth(blob.boundingRect.getWidth() / w);
+        this->boundingRect.setHeight(blob.boundingRect.getHeight() / h);
+        this->centroid = ofPoint((blob.centroid.x + offsetW) / w, blob.centroid.y / h);
         this->area = blob.area / (w * h);
         this->length = blob.length / (w * h);
     }
@@ -56,7 +56,8 @@ public:
         ofNoFill();
         ofSetHexColor(0x00FFFF);
         ofBeginShape();
-        for (int i = 0; i < nPts; i++){
+        for (int i = 0; i < nPts; i++)
+        {
             ofVertex(x + pts[i].x, y + pts[i].y);
         }
         ofEndShape(true);
@@ -89,7 +90,8 @@ namespace sequencerAnimation
             ofBeginShape();
             for (const auto& p : mBlob.pts)
             {
-                ofVertex(p.x, p.y);
+                // TODO: define width and height
+                ofVertex(p.x * ofGetWidth(), p.y * ofGetHeight() * 0.5);
             }
             ofEndShape();
         }
@@ -253,7 +255,7 @@ public:
                 mTargetPos.set(blobs[mCurrentIndex + 1].centroid);
                 float dist = ofDist(blobs[mCurrentIndex  ].centroid.x, blobs[mCurrentIndex  ].centroid.y,
                                     blobs[mCurrentIndex+1].centroid.x, blobs[mCurrentIndex+1].centroid.y);
-                mDurationToNext = (MIN(dist, 100) / 100) * mMaxDurationToNext;
+                mDurationToNext = mMaxDurationToNext;
             }
             
             // reset
@@ -266,15 +268,12 @@ public:
     void draw(int x, int y, int w, int h)
     {
         if (mLastPos.match(mTargetPos) || mDurationToNext == 0) return;
-        float scalex, scaley;
-        if( mWidth != 0 ) { scalex = w/mWidth; } else { scalex = 1.0f; }
-        if( mHeight != 0 ) { scaley = h/mHeight; } else { scaley = 1.0f; }
         ofPushMatrix();
         ofTranslate(x, y);
-        ofScale(scalex, scaley);
         ofSetColor(mCol, 127);
         ofFill();
-        ofCircle(mLastPos.interpolate(mTargetPos, ofMap(mCount, 0, mDurationToNext, 0, 1)), 3);
+        ofVec2f pos = mLastPos.interpolate(mTargetPos, ofMap(mCount, 0, mDurationToNext, 0, 1));
+        ofCircle(pos.x * w, pos.y * h, 5);
         ofPopMatrix();
     }
 
@@ -303,7 +302,7 @@ public:
         mHeight = 0;
         mSeq.push_back(mVertSeq = new VerticalSequencer(2.5, 1, ofColor(0, 255, 255)));
         mSeq.push_back(mVertSeq = new VerticalSequencer(2.5/4, 2, ofColor(255, 0, 255)));
-        mSeq.push_back(mOrdinalSeq = new OrdinalSequencer(1, 9, ofColor(255, 255, 0)));
+        mSeq.push_back(mOrdinalSeq = new OrdinalSequencer(0.5, 9, ofColor(255, 255, 0)));
     }
     
     void setupMidi(const string& senderPoitName, const string& receiverPortName)
@@ -321,7 +320,7 @@ public:
         {
             if (e->isPlaying())
             {
-                e->setSize(mWidth, mHeight);
+                e->setSize(1, 1);
                 e->update(tick);
                 e->emit(mBlobs);
             }
@@ -333,8 +332,8 @@ public:
     {
         ofPushStyle();
         ofSetHexColor(0xDD00CC);
-        glPushMatrix();
-        glTranslatef( x, y, 0.0 );
+        ofPushMatrix();
+        ofTranslate(x, y);
         
         ofNoFill();
         for( int i=0; i<(int)mBlobs.size(); i++ )
@@ -361,7 +360,7 @@ public:
         
         sequencerAnimation::manager.draw();
         
-        glPopMatrix();
+        ofPopMatrix();
         
         for (auto& e : mSeq)
         {
