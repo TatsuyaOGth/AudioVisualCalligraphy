@@ -129,7 +129,7 @@ public:
     
     static void sendNote(const BLOB_TYPE& blob, int channel)
     {
-        int note = ofMap(blob.area, 10*10, 100*100, 86, 32, true);
+        int note = ofMap(blob.area, 0, 0.1, 64, 24, true);
         int velo = ofRandom(90, 110);
         MIDI_SENDER->makeNote(note, velo, channel, 1);
     }
@@ -331,7 +331,7 @@ public:
     void draw(int x, int y, int w, int h)
     {
         ofPushStyle();
-        ofSetHexColor(0xDD00CC);
+        ofSetColor(255, 0, 0);
         ofPushMatrix();
         ofTranslate(x, y);
         
@@ -344,11 +344,11 @@ public:
                    mBlobs[i].boundingRect.height * h);
         }
         
-        ofSetHexColor(0x00FFFF);
         
         for( int i=0; i<(int)mBlobs.size(); i++ )
         {
             ofNoFill();
+            mBlobs[i].hole ? ofSetColor(0, 0, 255) : ofSetColor(0, 255, 0);
             ofBeginShape();
             for( int j=0; j<mBlobs[i].nPts; j++ )
             {

@@ -310,7 +310,19 @@ public:
         {
             if (e.boundingRect.inside(x, y))
             {
+                // add blob
                 mBDC.addBlob(e, w, h, offsetW);
+                // add inner blob
+                for (auto& f : contourFinder.blobs)
+                {
+                    if (f.centroid.match(e.centroid) == false)
+                    {
+                        if (e.boundingRect.inside(f.boundingRect))
+                        {
+                            mBDC.addBlob(f, w, h, offsetW);
+                        }
+                    }
+                }
             }
         }
     }
