@@ -72,15 +72,18 @@ public:
 class TwinkBlob : public BaseAnimation
 {
     ofColor mCol;
+    float mVec;
     
 public:
     TwinkBlob(const BLOB_TYPE* blob) : BaseAnimation(blob)
     {
         mCol = ofColor::fromHsb(ofRandom(255), 255, 200);
+        mVec = 0;
     }
     void draw()
     {
         ofSetColor(mCol, getLife() * 255);
+        mVec += 0.5;
         
         ofFill();
         vbu::washiImage.bind();
@@ -99,16 +102,37 @@ class ParticleBlobEdge : public BaseAnimation
 {
     ofColor mCol;
     int mValiation;
+    float mSize;
     
 public:
     ParticleBlobEdge(const BLOB_TYPE* blob) : BaseAnimation(blob)
     {
         mCol = ofColor(255, 255, 255);
         mValiation = 0;
+        mSize = ofRandom(100, 150);
     }
     void draw()
     {
         ofSetColor(mCol, getLife() * 255);
+        
+        switch (mValiation)
+        {
+            case 0: drawPoints(); break;
+            
+        }
+    }
+    
+    void drawPoints()
+    {
+        const ofPoint& p = mBlob->centroid;
+        for (auto& e : mBlob->pts)
+        {
+            
+        }
+    }
+    
+    void drawPointLines()
+    {
         
     }
 };
@@ -251,6 +275,7 @@ public:
         mCurrentNumScene = 0;
         mScenes.changeScene(mSceneNames[mCurrentNumScene], 2);
         
+        // setup static velues
         vbu::width = width;
         vbu::height = height;
         vbu::washiImage.loadImage("washi.png");

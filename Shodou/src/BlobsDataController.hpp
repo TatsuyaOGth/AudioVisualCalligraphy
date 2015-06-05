@@ -83,7 +83,7 @@ public:
         // option
         int pan  = ofMap(blob.centroid.x, 0, 1, 0, 127, true);
         int area = ofMap(blob.area, 0, 0.01, 0, 127, true);
-        int length = ofMap(blob.length, 0, 200, 1, 16, true);
+        float length = ofMap(blob.length, 0, 200, 0.25, 8, true);
         
 //        LOG_DEBUG << length;
         
@@ -479,10 +479,11 @@ public:
     
     void removeBlob()
     {
-        if (!mBlobs.empty())
-        {
-            mBlobs.pop_back();
-        }
+        // FIXME: blob pointer
+//        if (!mBlobs.empty())
+//        {
+//            mBlobs.pop_back();
+//        }
     }
     
     const BLOBS_TYPE& getBlobsRef() const
