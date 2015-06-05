@@ -6,16 +6,18 @@
 
 #define USE_PROGRAMMABLE_GL
 
-using namespace flowTools;
-
 class FlowTools
 {
     
 public:
+    FlowTools(){}
     void setup();
     void update();
     void draw();
+    void drawGui();
     void emit(int x, int y);
+    void setTexture(ofTexture& tex);
+    
     
     ofVec2f				lastMouse;
     
@@ -63,17 +65,17 @@ public:
     int					drawWidth;
     int					drawHeight;
     
-    ftOpticalFlow		opticalFlow;
-    ftVelocityMask		velocityMask;
-    ftFluidSimulation	fluid;
-    ftParticleFlow		particleFlow;
+    flowTools::ftOpticalFlow		opticalFlow;
+    flowTools::ftVelocityMask		velocityMask;
+    flowTools::ftFluidSimulation	fluid;
+    flowTools::ftParticleFlow		particleFlow;
     
-    ftDisplayScalar		displayScalar;
-    ftVelocityField		velocityField;
-    ftTemperatureField	temperatureField;
+    flowTools::ftDisplayScalar		displayScalar;
+    flowTools::ftVelocityField		velocityField;
+    flowTools::ftTemperatureField	temperatureField;
     
-    int					numDrawForces;
-    ftDrawForce*		flexDrawForces;
+    int                         numDrawForces;
+    flowTools::ftDrawForce*		flexDrawForces;
     
     ofImage				flowToolsLogoImage;
     bool				showLogo;

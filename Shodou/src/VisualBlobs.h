@@ -5,7 +5,7 @@
 #include "Blob.h"
 #include "ofxAnimationPrimitives.h"
 #include "InputImageController.h"
-
+#include "FlowTools.h"
 
 typedef const vector<BaseImagesInterface*> baseimages_type;
 
@@ -62,6 +62,7 @@ public:
     static float    smHeight;
     static ofRectangle smRemapedRect;
     static ofImage  smWashiImage;
+    static FlowTools* smFlowTools;
     
     static void setupFbo(float w, float h);
     static ofTexture& getJoinedTexture(baseimages_type& images, float width, float height, TargetTexture targetTexture);

@@ -266,6 +266,8 @@ void mainApp::mousePressed(int x, int y, int mouse)
         }
         addBlobAtPoint(cf, targetX, targetY, cfW, cfH, offsetW);
     }
+    
+    VisualBlobs::smFlowTools->emit(x, y);
 }
 
 //-----------------------------------------------------------------------------------------------

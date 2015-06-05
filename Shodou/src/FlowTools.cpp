@@ -1,10 +1,10 @@
 #include "FlowTools.h"
 
+using namespace flowTools;
+
 //--------------------------------------------------------------
 void FlowTools::setup()
-{
-    ofSetVerticalSync(false);
-    
+{    
     drawWidth = 1280;
     drawHeight = 720;
     // process all but the density on 16th resolution
@@ -22,8 +22,8 @@ void FlowTools::setup()
     fluid.setup(flowWidth, flowHeight, drawWidth, drawHeight, false);
 #endif
     
-    flowToolsLogoImage.loadImage("flowtools.png");
-    fluid.addObstacle(flowToolsLogoImage.getTextureReference());
+//    flowToolsLogoImage.loadImage("flowtools.png");
+//    fluid.addObstacle(flowToolsLogoImage.getTextureReference());
     showLogo = true;
     
     // Particles
@@ -69,7 +69,6 @@ void FlowTools::setupGui(){
     gui.setDefaultBackgroundColor(ofColor(0, 0, 0, 127));
     gui.setDefaultFillColor(ofColor(160, 160, 160, 160));
     gui.add(guiFPS.set("FPS", 0, 0, 60));
-    gui.add(doFullScreen.set("fullscreen (F)", false));
     doFullScreen.addListener(this, &FlowTools::setFullScreen);
     gui.add(toggleGuiDraw.set("show gui (G)", false));
     gui.add(doFlipCamera.set("flip camera (C)", true));
@@ -158,7 +157,7 @@ void FlowTools::setupGui(){
     gui.add(doResetDrawForces.set("reset draw forces (D)", false));
     doResetDrawForces.addListener(this,  &FlowTools::resetDrawForces);
     
-    gui.loadFromFile("settings.xml");
+    gui.loadFromFile("flowtools_settings.xml");
     gui.minimizeAll();
     
     toggleGuiDraw = true;
@@ -290,6 +289,7 @@ void FlowTools::draw(){
     ofClear(0,0);
     
     ofPushStyle();
+//    fluid.getObstacle().draw(0, 0, windowWidth, windowHeight);
     fluid.draw(0, 0, windowWidth, windowHeight);
     ofEnableBlendMode(OF_BLENDMODE_ADD);
     //    if (particleFlow.isActive())
@@ -297,16 +297,16 @@ void FlowTools::draw(){
     if (showLogo) {
         ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
         ofSetColor(255,255,255,255);
-        flowToolsLogoImage.draw(0, 0, windowWidth, windowHeight);
+//        flowToolsLogoImage.draw(0, 0, windowWidth, windowHeight);
     }
+    
     ofPopStyle();
-    
-    
-    if (toggleGuiDraw) {
-        guiFPS = ofGetFrameRate();
-        gui.draw();
-    }
-    
+}
+
+void FlowTools::drawGui()
+{
+    guiFPS = ofGetFrameRate();
+    gui.draw();
 }
 
 //--------------------------------------------------------------
@@ -319,3 +319,9 @@ void FlowTools::emit(int x, int y)
     }
     genEmergence();
 }
+
+void FlowTools::setTexture(ofTexture &tex)
+{
+    fluid.addObstacle(tex);
+}
+

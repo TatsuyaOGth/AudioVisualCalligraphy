@@ -10,6 +10,7 @@ float    VisualBlobs::smWidth;
 float    VisualBlobs::smHeight;
 ofRectangle VisualBlobs::smRemapedRect;
 ofImage  VisualBlobs::smWashiImage;
+FlowTools* VisualBlobs::smFlowTools;
 
 
 void VisualBlobs::setupFbo(float w, float h)
@@ -318,12 +319,22 @@ VisualBlobs::VisualBlobs(baseimages_type& baseImageInterfacePtr, const float wid
     smWidth = width;
     smHeight = height;
     smWashiImage.loadImage("washi.png");
+    
+    smFlowTools = new FlowTools();
+//    smFlowTools->setTexture();
+    smFlowTools->setup();
 }
 
 void VisualBlobs::update()
 {
     mScenes.update();
     mAnimations.update();
+    
+//    smFlowTools->setTexture(VisualBlobs::getJoinedTexture(mImages,
+//                                  VisualBlobs::smRemapedRect.width,
+//                                  VisualBlobs::smRemapedRect.height,
+//                                  VisualBlobs::BINARY));
+    smFlowTools->update();
 }
 
 void VisualBlobs::rendering()
@@ -335,7 +346,9 @@ void VisualBlobs::rendering()
     mFbo.begin();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    smFlowTools->draw();
     mScenes.draw();
+    
     mAnimations.draw();
     
     mFbo.end();
