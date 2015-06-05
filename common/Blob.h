@@ -20,6 +20,7 @@ public:
     {
         this->hole          = blob.hole;
         this->nPts          = blob.nPts;
+        this->length        = blob.length;
         
         // set value with normalize
         for (const auto& e : blob.pts)
@@ -32,7 +33,6 @@ public:
         this->boundingRect.setHeight(blob.boundingRect.getHeight() / h);
         this->centroid = ofPoint((blob.centroid.x + offsetW) / w, blob.centroid.y / h);
         this->area = blob.area / (w * h);
-        this->length = blob.length / (w * h);
     }
 };
 

@@ -26,6 +26,8 @@ public:
     ofTexture& getCropedTextureRef()  { return mCropedTex;  }
     ofTexture& getWarpedTextureRef()  { return mWarpedTex;  }
     ofTexture& getBinaryTextureRef()  { return mBinaryTex;  }
+    
+    ofxCvContourFinder& getCvContourFinder() { return mContourFinder; }
 };
 
 
@@ -166,8 +168,6 @@ public:
     virtual void togglePlay()   = 0;
     
     void setThreshold(float th) { mBlobThreshold = th; }
-    
-    ofxCvContourFinder& getCvContourFinder() { return mContourFinder; }
     
     ofParameterGroup& getParameterGroup()
     {

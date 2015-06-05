@@ -83,10 +83,14 @@ public:
         // option
         int pan  = ofMap(blob.centroid.x, 0, 1, 0, 127, true);
         int area = ofMap(blob.area, 0, 0.01, 0, 127, true);
+        int length = ofMap(blob.length, 0, 200, 1, 16, true);
         
-        MIDI_SENDER->makeNote(note, velo, channel, duration);
+//        LOG_DEBUG << length;
+        
+        MIDI_SENDER->makeNote(note, velo, channel, duration * length);
         MIDI_SENDER->ctlOut(10, pan, channel);
         MIDI_SENDER->ctlOut(102, area, channel);
+//        MIDI_SENDER->ctlOut(103, length, channel);
     }
 };
 
@@ -216,8 +220,8 @@ public:
                 if (bLoop)
                 {
                     // loop
-                    mDurationToNext = mMaxDurationToNext;
                     setup();
+                    mDurationToNext = mMaxDurationToNext;
                     bPlay = false;
                     return;
                 }

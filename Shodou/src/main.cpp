@@ -225,7 +225,10 @@ public:
     void blobNoteEvent(BlobNoteEvent& e)
     {
         // to visual
-        
+        if (e.channel == 3)
+        {
+            mVisualBlob->getAnimationManager().createInstance<TwinkBlob>(e.blobPtr)->play(1);
+        }
     }
     
     void keyPressed(int key)
@@ -253,6 +256,9 @@ public:
             case 's': mBDC.sequencerTogglePlay(5); break;
             case 'd': mBDC.sequencerTogglePlay(6); break;
             case 'f': mBDC.sequencerTogglePlay(7); break;
+                
+            // visual
+            case '/': mVisualBlob->changeScene(); break;
         }
         
         if (mMode == BLOB_CONTROLL)
