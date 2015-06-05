@@ -1,0 +1,13 @@
+ofxGui
+ofxOsc
+ofxXmlSettings
+ofxAnimationPrimitives
+ofxBox2d
+ofxContentsMixer
+ofxFlowTools
+ofxFX
+ofxMidi
+ofxPostGlitch
+ofxPostProcessing
+ofxSPK
+ofxVboParticles

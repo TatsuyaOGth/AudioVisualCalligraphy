@@ -1,45 +1,11 @@
 #include "ofMain.h"
-#include "utils.h"
+#include "../../common/utils.h"
+#include "../../common/constants.h"
 #include "InputImageController.hpp"
 #include "BlobsDataController.hpp"
+#include "VisualBlobs.hpp"
 #include "ImageProcessing.hpp"
 #include "ofxGui.h"
-
-////////////////////////////////////////////////////////////////////////////////
-
-// GENERAL
-//------------------------------------------------------------------------------
-//#define USE_CAMERA
-
-static const int NUM_INPUT = 2;
-
-// CAMERA
-//------------------------------------------------------------------------------
-static const int NUM_CAMERA = NUM_INPUT;
-static const int CAMERA_DEVISE_ID[] = {0, 1};
-static const int CAMERA_WIDTH     = 1280;
-static const int CAMERA_HEIGHT    = 720;
-
-
-
-// VIDEO
-//------------------------------------------------------------------------------
-static const string SOURCE_VIDEO[] = {"movie/test.mov", "movie/test_mini.mov"};
-static const int START_POSITION = 0.5;
-
-
-// MIDI
-//------------------------------------------------------------------------------
-static const string MIDI_SENDER_PORT_NAME   = "IAC Driver buss 1";
-static const string MIDI_RECEIVER_PORT_NAME = "IAC Driver buss 2";
-
-
-// GUU
-//------------------------------------------------------------------------------
-static const string GUI_FILENAME = "settings.xml";
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 
 class mainApp : public ofBaseApp
@@ -50,21 +16,27 @@ class mainApp : public ofBaseApp
     vector<InputImageController<ofVideoPlayer>*>    mInputImage;
 #endif
     
-    BlobsDataController      mBDC;
-    
-    ofPixels    mPrePix, mBlobPix;
-    ofTexture   mPreTex, mBlobTex;
+    vector<BaseImagesInterface*> mBaseImages; // for visual
+        
+    BlobsDataController     mBDC;
+    VisualBlobs             *mVisualBlob;
     
     enum mode { ON_SCREEN, PRE_PROCESS, BLOB_CONTROLL, } mMode;
     
     // parameter for imageprocessing
     ofxPanel gui;
-    ofParameterGroup mParamGroup;
+    ofParameterGroup    mParamGroup;
     ofParameter<float>  mBlobThreshold;
     ofParameter<int>    mMaxNumBlobs;
     bool bDrawGui;
     
 public:
+    
+    //-----------------------------------------------------------------------------------------------
+    /*
+        Main processing
+     */
+    //-----------------------------------------------------------------------------------------------
     
     void setup()
     {
@@ -90,7 +62,16 @@ public:
         // setup blob controller
         //----------
         mBDC.setupMidi(MIDI_SENDER_PORT_NAME, MIDI_RECEIVER_PORT_NAME);
-        mBDC.setSize(CAMERA_WIDTH * mInputImage.size(), CAMERA_HEIGHT);
+        ofAddListener(mBDC.mBlobNoteEvent, this, &mainApp::blobNoteEvent);
+        
+        //----------
+        // setup visual
+        //----------
+        for (auto& e : mInputImage)
+        {
+            mBaseImages.push_back(e);
+        }
+        mVisualBlob = new VisualBlobs(mBaseImages, VISUAL_WINDOW_WIDTH, VISUAL_WINDOR_HEIGHT);
         
         //----------
         // init values
@@ -128,12 +109,24 @@ public:
         // update blob data controller
         //----------
         mBDC.update();
+        
+        //----------
+        // update visual
+        //----------
+        mVisualBlob->update();
     }
-    
-    
     
     void draw()
     {
+        //----------
+        // render visual
+        //----------
+        mVisualBlob->rendering();
+        
+        
+        //----------
+        // draw moniter
+        //----------
         switch (mMode)
         {
             case ON_SCREEN:     drawOnScreen(); break;
@@ -147,8 +140,7 @@ public:
     
     void drawOnScreen()
     {
-        ofBackground(0);
-        // TODO: make visual
+        mVisualBlob->getTextureRef().draw(0, 0, ofGetWidth(), ofGetHeight());
     }
     
     void drawPreProcess()
@@ -224,6 +216,17 @@ public:
     }
     
     
+    //-----------------------------------------------------------------------------------------------
+    /*
+        Events
+     */
+    //-----------------------------------------------------------------------------------------------
+
+    void blobNoteEvent(BlobNoteEvent& e)
+    {
+        // to visual
+        
+    }
     
     void keyPressed(int key)
     {
@@ -250,9 +253,6 @@ public:
             case 's': mBDC.sequencerTogglePlay(5); break;
             case 'd': mBDC.sequencerTogglePlay(6); break;
             case 'f': mBDC.sequencerTogglePlay(7); break;
-                
-            // test midi
-            case 'm': mBDC.makeNoteRandom(1); break;
         }
         
         if (mMode == BLOB_CONTROLL)
@@ -301,6 +301,12 @@ public:
         }
     }
     
+    //-----------------------------------------------------------------------------------------------
+    /*
+        Sub Routine
+     */
+    //-----------------------------------------------------------------------------------------------
+    
     void changedMasterThreshold(float& e)
     {
         for (auto& e : mInputImage)
@@ -336,7 +342,6 @@ public:
 
 
 
-//========================================================================
 int main( )
 {
 	ofSetupOpenGL(1280,768,OF_WINDOW);

@@ -3,8 +3,7 @@
 #include "ofMain.h"
 #include "ImageProcessing.hpp"
 
-template<typename baseImageObject>
-class InputImageController : public baseImageObject
+class BaseImagesInterface
 {
 protected:
     ofPixels    mFlipedPix, mGrayPix, mResizedPix, mCropedPix, mWarpedPix, mBinaryPix;
@@ -13,6 +12,28 @@ protected:
     ofxCvColorImage         mCvImage;
     ofxCvGrayscaleImage     mCvGrayImage;
     ofxCvContourFinder      mContourFinder;
+    
+public:
+    
+    ofPixels& getGrayPixelsRef()      { return mGrayPix;    }
+    ofPixels& getResizedPixelsRef()   { return mResizedPix; }
+    ofPixels& getCropedPixelsRef()    { return mCropedPix;  }
+    ofPixels& getWarpedPixelsRef()    { return mWarpedPix;  }
+    ofPixels& getBinaryPixelsRef()    { return mBinaryPix;  }
+    
+    ofTexture& getGrayTextureRef()    { return mGrayTex;    }
+    ofTexture& getResizedTextureRef() { return mResizedTex; }
+    ofTexture& getCropedTextureRef()  { return mCropedTex;  }
+    ofTexture& getWarpedTextureRef()  { return mWarpedTex;  }
+    ofTexture& getBinaryTextureRef()  { return mBinaryTex;  }
+};
+
+
+
+template<typename baseImageObject>
+class InputImageController : public baseImageObject, public BaseImagesInterface
+{
+protected:
     
     ofParameterGroup        mParamGroup;
     ofParameter<int>        mResizeRatio;
@@ -38,10 +59,6 @@ protected:
         mParamGroup.add(mWarpX.set("WARP_X" + idxStr, 0, -180, 180));
         mParamGroup.add(mWarpY.set("WARP_Y" + idxStr, 0, -180, 180));
         mParamGroup.add(mBlobThreshold.set("THRESHOLD", 127, 0, 255));
-        
-        mResizeRatio.addListener(this, &InputImageController::onResizeEvent);
-        mCropXY1.addListener(this, &InputImageController::onCropEvent);
-        mCropXY2.addListener(this, &InputImageController::onCropEvent);
         idx++;
     }
     
@@ -135,13 +152,6 @@ protected:
         textureLoadData(mBinaryPix,     mBinaryTex);
     }
     
-    void onResizeEvent(int& e)
-    {
-    }
-    
-    void onCropEvent(ofVec2f& e)
-    {
-    }
 
 public:
     InputImageController()
@@ -156,18 +166,6 @@ public:
     virtual void togglePlay()   = 0;
     
     void setThreshold(float th) { mBlobThreshold = th; }
-    
-    ofPixels& getGrayPixelsRef()      { return mGrayPix;    }
-    ofPixels& getResizedPixelsRef()   { return mResizedPix; }
-    ofPixels& getCropedPixelsRef()    { return mCropedPix;  }
-    ofPixels& getWarpedPixelsRef()    { return mWarpedPix;  }
-    ofPixels& getBinaryPixelsRef()    { return mBinaryPix;  }
-    
-    ofTexture& getGrayTextureRef()    { return mGrayTex;    }
-    ofTexture& getResizedTextureRef() { return mResizedTex; }
-    ofTexture& getCropedTextureRef()  { return mCropedTex;  }
-    ofTexture& getWarpedTextureRef()  { return mWarpedTex;  }
-    ofTexture& getBinaryTextureRef()  { return mBinaryTex;  }
     
     ofxCvContourFinder& getCvContourFinder() { return mContourFinder; }
     

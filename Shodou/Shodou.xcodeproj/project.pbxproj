@@ -287,8 +287,11 @@
 		916196BF1B10831D00DEF800 /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = utils.h; path = ../../common/utils.h; sourceTree = "<group>"; };
 		916196C21B109DED00DEF800 /* InputImageController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputImageController.hpp; sourceTree = "<group>"; };
 		916196C31B10AB0500DEF800 /* ImageProcessing.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImageProcessing.hpp; sourceTree = "<group>"; };
-		919C6C8E1B19C29100DD6C35 /* MidiSenderController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MidiSenderController.hpp; sourceTree = "<group>"; };
-		919C6C8F1B19C29100DD6C35 /* MidiReceiverController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MidiReceiverController.hpp; sourceTree = "<group>"; };
+		9195E8701B2161D00022AEEC /* VisualBlobs.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VisualBlobs.hpp; sourceTree = "<group>"; };
+		9195E8791B216F180022AEEC /* MidiReceiverController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = MidiReceiverController.hpp; path = ../../common/MidiReceiverController.hpp; sourceTree = "<group>"; };
+		9195E87A1B216F180022AEEC /* MidiSenderController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = MidiSenderController.hpp; path = ../../common/MidiSenderController.hpp; sourceTree = "<group>"; };
+		9195E87B1B216F200022AEEC /* Blob.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Blob.h; path = ../../common/Blob.h; sourceTree = "<group>"; };
+		9195E87C1B216F350022AEEC /* constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = constants.h; path = ../../common/constants.h; sourceTree = "<group>"; };
 		91E4DFA41B914CDAD9DC657F /* ftParticleFlow.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ftParticleFlow.h; path = ../../../addons/ofxFlowTools/src/particles/ftParticleFlow.h; sourceTree = SOURCE_ROOT; };
 		938214A2795AA8FED29086DB /* ofxMidiConstants.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxMidiConstants.h; path = ../../../addons/ofxMidi/src/ofxMidiConstants.h; sourceTree = SOURCE_ROOT; };
 		946187321200AC04E570E6EC /* hierarchical_clustering_index.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = hierarchical_clustering_index.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/hierarchical_clustering_index.h; sourceTree = SOURCE_ROOT; };
@@ -1388,12 +1391,15 @@
 			isa = PBXGroup;
 			children = (
 				916196BF1B10831D00DEF800 /* utils.h */,
+				9195E87C1B216F350022AEEC /* constants.h */,
+				9195E8791B216F180022AEEC /* MidiReceiverController.hpp */,
+				9195E87A1B216F180022AEEC /* MidiSenderController.hpp */,
+				9195E87B1B216F200022AEEC /* Blob.h */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				916196C31B10AB0500DEF800 /* ImageProcessing.hpp */,
-				919C6C8E1B19C29100DD6C35 /* MidiSenderController.hpp */,
-				919C6C8F1B19C29100DD6C35 /* MidiReceiverController.hpp */,
 				916196C21B109DED00DEF800 /* InputImageController.hpp */,
 				912CB0221B1616C000816856 /* BlobsDataController.hpp */,
+				9195E8701B2161D00022AEEC /* VisualBlobs.hpp */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -1683,6 +1689,7 @@
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(OF_CORE_HEADERS)",
+					../../common,
 					../../../addons/ofxGui/libs,
 					../../../addons/ofxGui/src,
 					../../../addons/ofxOpenCv/libs,
@@ -1787,7 +1794,6 @@
 					../../../addons/ofxSyphon/libs/Syphon/lib/osx/Syphon_.framework/Versions/Current/Resources,
 					../../../addons/ofxSyphon/libs/Syphon/lib/osx/Syphon_.framework/Versions/Current/Resources/English.lproj,
 					../../../addons/ofxSyphon/libs/Syphon/src,
-					../common,
 					../../../addons/ofxSyphon/src,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
@@ -1827,6 +1833,7 @@
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(OF_CORE_HEADERS)",
+					../../common,
 					../../../addons/ofxGui/libs,
 					../../../addons/ofxGui/src,
 					../../../addons/ofxOpenCv/libs,
@@ -1931,7 +1938,6 @@
 					../../../addons/ofxSyphon/libs/Syphon/lib/osx/Syphon_.framework/Versions/Current/Resources,
 					../../../addons/ofxSyphon/libs/Syphon/lib/osx/Syphon_.framework/Versions/Current/Resources/English.lproj,
 					../../../addons/ofxSyphon/libs/Syphon/src,
-					../common,
 					../../../addons/ofxSyphon/src,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;

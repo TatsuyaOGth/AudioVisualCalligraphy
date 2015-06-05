@@ -3,72 +3,13 @@
 #include "ofMain.h"
 #include "utils.h"
 #include "ofxOpenCv.h"
+#include "Blob.h"
+#include "VisualBlobs.hpp"
 #include "ofxAnimationPrimitives.h"
 #include "MidiSenderController.hpp"
 #include "MIdiReceiverController.hpp"
 
-
-class Blob
-{
-public:
-    float               area;
-    float               length;
-    ofRectangle         boundingRect;
-    ofPoint             centroid;
-    bool                hole;
-    
-    vector <ofPoint>    pts;    // the contour of the blob
-    int                 nPts;   // number of pts;
-    
-    
-public:
-    Blob(ofxCvBlob& blob, float w, float h, float offsetW = 0)
-    {
-        this->hole          = blob.hole;
-        this->nPts          = blob.nPts;
-        
-        // set value with normalize
-        for (const auto& e : blob.pts)
-        {
-            this->pts.push_back(ofPoint((e.x + offsetW) / w, (e.y) / h));
-        }
-        this->boundingRect.setX((blob.boundingRect.getX() + offsetW) / w);
-        this->boundingRect.setY(blob.boundingRect.getY() / h);
-        this->boundingRect.setWidth(blob.boundingRect.getWidth() / w);
-        this->boundingRect.setHeight(blob.boundingRect.getHeight() / h);
-        this->centroid = ofPoint((blob.centroid.x + offsetW) / w, blob.centroid.y / h);
-        this->area = blob.area / (w * h);
-        this->length = blob.length / (w * h);
-    }
-    
-    void addOffsetX(float offsetX)
-    {
-        for (auto& e : pts)
-        {
-            e.x += offsetX;
-        }
-        centroid.x += offsetX;
-        boundingRect.translate(offsetX, 0);
-    }
-    
-    void draw(float x = 0, float y = 0)
-    {
-        ofNoFill();
-        ofSetHexColor(0x00FFFF);
-        ofBeginShape();
-        for (int i = 0; i < nPts; i++)
-        {
-            ofVertex(x + pts[i].x, y + pts[i].y);
-        }
-        ofEndShape(true);
-        ofSetHexColor(0xff0099);
-        ofRect(x + boundingRect.x, y + boundingRect.y, boundingRect.width, boundingRect.height);
-    }
-};
-
-
-typedef Blob                BLOB_TYPE;
-typedef deque<BLOB_TYPE>    BLOBS_TYPE;
+class BlobsDataController;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -107,11 +48,15 @@ namespace sequencerAnimation
 //-----------------------------------------------------------------------------------------------
 class Sequencer
 {
+    friend class BlobsDataController;
+    
 protected:
     bool    bPlaying;
     float   mTempo;
     int     mTime;
     float   mWidth, mHeight;
+    
+    ofEvent<BlobNoteEvent> mBlobNoteEvent;
 
 public:
     Sequencer() : bPlaying(false), mTempo(120), mTime(5) {}
@@ -189,6 +134,8 @@ public:
             {
                 Sequencer::sendNote(e, 0.5, mChannel);
                 sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&e, mCol)->play(0.5);
+                BlobNoteEvent event(&e, mChannel);
+                ofNotifyEvent(mBlobNoteEvent, event, this);
             }
         }
     }
@@ -256,8 +203,12 @@ public:
         if (bPlay)
         {
             if (blobs.empty() || mCurrentIndex >= blobs.size()) return;
+            // send midi
             Sequencer::sendNote(blobs[mCurrentIndex], mMaxDurationToNext, mChannel);
             sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(0.5);
+            // notify event
+            BlobNoteEvent event(&blobs[mCurrentIndex], mChannel);
+            ofNotifyEvent(mBlobNoteEvent, event, this);
             
             // set duration to next
             if (mCurrentIndex + 1 >= blobs.size())
@@ -267,11 +218,14 @@ public:
                     // loop
                     mDurationToNext = mMaxDurationToNext;
                     setup();
+                    bPlay = false;
+                    return;
                 }
                 else {
                     // stop sequence
                     setup();
                     bPlaying = false;
+                    return;
                 }
             }
             else {
@@ -351,8 +305,14 @@ public:
         {
             int nextIndex = ofRandom(blobs.size());
             if (blobs.empty() || mCurrentIndex >= blobs.size()) return;
+            
+            // send midi
             Sequencer::sendNote(blobs[mCurrentIndex], mMaxDurationToNext, mChannel);
             sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(0.5);
+            
+            // notify event
+            BlobNoteEvent event(&blobs[mCurrentIndex], mChannel);
+            ofNotifyEvent(mBlobNoteEvent, event, this);
             
             // set duration to next
             mLastPos.set(blobs[mCurrentIndex].centroid);
@@ -391,17 +351,17 @@ public:
 class BlobsDataController
 {
     BLOBS_TYPE mBlobs;
-    float mWidth, mHeight;
     
     VerticalSequencer*  mVertSeq;
     OrdinalSequencer*   mOrdinalSeq;
     vector<Sequencer*> mSeq;
     
 public:
+    ofEvent<BlobNoteEvent> mBlobNoteEvent;
+    
+public:
     BlobsDataController()
     {
-        mWidth = 0;
-        mHeight = 0;
         mSeq.push_back(new VerticalSequencer(4, 1, ofColor(0, 255, 255)));
         mSeq.push_back(new VerticalSequencer(1, 2, ofColor(255, 0, 255)));
         mSeq.push_back(new OrdinalSequencer(0.25, true, 3, ofColor(127, 255, 0)));
@@ -410,6 +370,11 @@ public:
         mSeq.push_back(new OrdinalSequencer(2.00, true, 6, ofColor(0, 0, 255)));
         
         mSeq.push_back(new OrdinalSequencer(0.50, false, 9, ofColor(255, 255, 0)));
+        
+        for (auto& e : mSeq)
+        {
+            ofAddListener(e->mBlobNoteEvent, this, &BlobsDataController::sequencerCallback);
+        }
     }
     
     void setupMidi(const string& senderPoitName, const string& receiverPortName)
@@ -417,7 +382,7 @@ public:
         MIDI_SENDER->listPorts();
         MIDI_SENDER->openPort(senderPoitName);
         MIDI_RECEIVER->openPort(receiverPortName);
-        ofAddListener(MIDI_RECEIVER->receivedMidiEvent, this, &BlobsDataController::receivedMidiMessage);
+//        ofAddListener(MIDI_RECEIVER->receivedMidiEvent, this, &BlobsDataController::receivedMidiMessage);
     }
     
     void update()
@@ -477,21 +442,9 @@ public:
         ofPopStyle();
     }
     
-    void receivedMidiMessage(ofxMidiMessage & e)
+    void sequencerCallback(BlobNoteEvent& e)
     {
-        if (e.status == MIDI_NOTE_ON)
-        {
-            
-            //MIDI_SENDER->makeNote(64, 100, 1, 20);
-        }
-    }
-    
-    void makeNoteRandom(int channel)
-    {
-        int shuffle = ofRandom(mBlobs.size());
-        int note = ofMap(mBlobs[shuffle].area, 10*10, 100*100, 86, 32, true);
-        int velo = ofRandom(90, 110);
-        MIDI_SENDER->makeNote(note, velo, channel, 1);
+        ofNotifyEvent(mBlobNoteEvent, e, this);
     }
     
     void sequencerPlay(int sequencerIndex)
@@ -513,22 +466,6 @@ public:
         if (sequencerIndex < 0 || sequencerIndex >= mSeq.size()) return;
         mSeq[sequencerIndex]->setup();
         mSeq[sequencerIndex]->togglePlay();
-    }
-    
-    void setSize(float w, float h)
-    {
-        mWidth = w;
-        mHeight = h;
-    }
-    
-    float getWidth()
-    {
-        return mWidth;
-    }
-    
-    float getHeight()
-    {
-        return mHeight;
     }
     
     void addBlob(ofxCvBlob& cvBlob, float w, float h, float offsetW)
