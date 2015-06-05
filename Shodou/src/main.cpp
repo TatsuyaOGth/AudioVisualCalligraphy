@@ -108,6 +108,7 @@ public:
         mParamGroup.add(mBlobThreshold.set("MASTER_THRESHOLD", 127, 0, 255));
         gui.setup(mParamGroup, GUI_FILENAME);
         gui.loadFromFile(GUI_FILENAME);
+        gui.minimizeAll();
         bDrawGui = true;
         
         mBlobThreshold.addListener(this, &mainApp::changedMasterThreshold);
@@ -232,7 +233,7 @@ public:
                 for (auto& e : mInputImage) e->togglePlay();
                 break;
                 
-            case 'f': ofToggleFullscreen(); break;
+            case 'F': ofToggleFullscreen(); break;
                 
             case '1': mMode = ON_SCREEN; break;
             case '2': mMode = PRE_PROCESS; break;
@@ -241,10 +242,14 @@ public:
             case '0': bDrawGui = !bDrawGui; break;
                
             // sequencer
-            case 'z': mBDC.sequencerTogglePlay(0); break;
-            case 'x': mBDC.sequencerTogglePlay(1); break;
-            case 'c': mBDC.sequencerTogglePlay(2); break;
-            case 'v': mBDC.sequencerTogglePlay(3); break;
+            case 'q': mBDC.sequencerTogglePlay(0); break;
+            case 'w': mBDC.sequencerTogglePlay(1); break;
+            case 'e': mBDC.sequencerTogglePlay(2); break;
+            case 'r': mBDC.sequencerTogglePlay(3); break;
+            case 'a': mBDC.sequencerTogglePlay(4); break;
+            case 's': mBDC.sequencerTogglePlay(5); break;
+            case 'd': mBDC.sequencerTogglePlay(6); break;
+            case 'f': mBDC.sequencerTogglePlay(7); break;
                 
             // test midi
             case 'm': mBDC.makeNoteRandom(1); break;

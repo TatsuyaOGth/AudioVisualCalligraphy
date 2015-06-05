@@ -75,32 +75,36 @@ typedef deque<BLOB_TYPE>    BLOBS_TYPE;
 //  SEQUENCER
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------------------
 namespace sequencerAnimation
 {
     class BlobDrawr : public ofxAnimationPrimitives::Instance
     {
-        const BLOB_TYPE& mBlob;
+        const BLOB_TYPE  *mBlob;
         ofColor mCol;
     public:
-        BlobDrawr(const BLOB_TYPE& blob, ofColor col) : mBlob(blob), mCol(col) {}
+        BlobDrawr(const BLOB_TYPE *blob, ofColor col) : mBlob(blob), mCol(col) {}
         void draw()
         {
-            ofSetColor(mCol, getLife() * 255);
-            ofFill();
-            ofBeginShape();
-            for (const auto& p : mBlob.pts)
-            {
-                // TODO: define width and height
-                ofVertex(p.x * ofGetWidth(), p.y * ofGetHeight() * 0.5);
-            }
-            ofEndShape();
+            // FIXME: tessaration bug
+//            assert(mBlob != NULL);
+//            if (mBlob == NULL) return;
+//            ofSetColor(mCol, getLife() * 255);
+//            ofFill();
+//            ofBeginShape();
+//            for (const auto& p : mBlob->pts)
+//            {
+//                // TODO: define width and height
+//                ofVertex(p.x * ofGetWidth(), p.y * ofGetHeight() * 0.5);
+//            }
+//            ofEndShape();
         }
     };
     
     static ofxAnimationPrimitives::InstanceManager manager;
 }
 
-
+//-----------------------------------------------------------------------------------------------
 class Sequencer
 {
 protected:
@@ -127,14 +131,21 @@ public:
     
     // send midi messages
     
-    static void sendNote(const BLOB_TYPE& blob, int channel)
+    static void sendNote(const BLOB_TYPE& blob, float duration, int channel)
     {
-        int note = ofMap(blob.area, 0, 0.1, 64, 24, true);
+        int note = ofMap(blob.area, 0, 0.01, 64, 24, true);
         int velo = ofRandom(90, 110);
-        MIDI_SENDER->makeNote(note, velo, channel, 1);
+        // option
+        int pan  = ofMap(blob.centroid.x, 0, 1, 0, 127, true);
+        int area = ofMap(blob.area, 0, 0.01, 0, 127, true);
+        
+        MIDI_SENDER->makeNote(note, velo, channel, duration);
+        MIDI_SENDER->ctlOut(10, pan, channel);
+        MIDI_SENDER->ctlOut(102, area, channel);
     }
 };
 
+//-----------------------------------------------------------------------------------------------
 class VerticalSequencer : public Sequencer
 {
     float mPos, mLastPos, mLoopTime;
@@ -172,11 +183,12 @@ public:
         float y2 = ofMap(mPos,     0, mLoopTime, 0, mHeight);
         for (const auto& e : blobs)
         {
+            if (e.hole) continue;
             const ofPoint& pos = e.centroid;
             if (pos.y > y1 && pos.y <= y2)
             {
-                Sequencer::sendNote(e, mChannel);
-                sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(e, mCol)->play(0.5);
+                Sequencer::sendNote(e, 0.5, mChannel);
+                sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&e, mCol)->play(0.5);
             }
         }
     }
@@ -194,6 +206,7 @@ public:
     }
 };
 
+//-----------------------------------------------------------------------------------------------
 class OrdinalSequencer : public Sequencer
 {
     float mCount;
@@ -204,13 +217,15 @@ class OrdinalSequencer : public Sequencer
     int mChannel;
     ofColor mCol;
     ofPoint mLastPos, mTargetPos;
+    bool bLoop;
     
 public:
-    OrdinalSequencer(float maxDurationToNext, int channel, ofColor col)
+    OrdinalSequencer(float maxDurationToNext, bool loop, int channel, ofColor col)
     {
         mMaxDurationToNext = maxDurationToNext;
         mChannel = channel;
         mCol.set(col);
+        bLoop = loop;
         setup();
     }
     
@@ -241,14 +256,23 @@ public:
         if (bPlay)
         {
             if (blobs.empty() || mCurrentIndex >= blobs.size()) return;
-            Sequencer::sendNote(blobs[mCurrentIndex], mChannel);
-            sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(blobs[mCurrentIndex], mCol)->play(0.5);
+            Sequencer::sendNote(blobs[mCurrentIndex], mMaxDurationToNext, mChannel);
+            sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(0.5);
             
             // set duration to next
             if (mCurrentIndex + 1 >= blobs.size())
             {
-                setup();
-                bPlaying = false;
+                if (bLoop)
+                {
+                    // loop
+                    mDurationToNext = mMaxDurationToNext;
+                    setup();
+                }
+                else {
+                    // stop sequence
+                    setup();
+                    bPlaying = false;
+                }
             }
             else {
                 mLastPos.set(blobs[mCurrentIndex].centroid);
@@ -276,7 +300,85 @@ public:
         ofCircle(pos.x * w, pos.y * h, 5);
         ofPopMatrix();
     }
+};
 
+//-----------------------------------------------------------------------------------------------
+class RandomSequencer : public Sequencer
+{
+    float mCount;
+    float mDurationToNext;
+    int mCurrentIndex;
+    bool bPlay;
+    float mMaxDurationToNext;
+    int mChannel;
+    ofColor mCol;
+    ofPoint mLastPos, mTargetPos;
+    
+public:
+    RandomSequencer(float maxDurationToNext, int channel, ofColor col)
+    {
+        mMaxDurationToNext = maxDurationToNext;
+        mChannel = channel;
+        mCol.set(col);
+        setup();
+    }
+    
+    void setup()
+    {
+        mCount = 0;
+        mCurrentIndex = 0;
+        mDurationToNext = 0;
+        bPlay = true;
+        mLastPos.set(0, 0);
+        mTargetPos.set(0, 0);
+    }
+    
+    void update(float tick)
+    {
+        if (!bPlay)
+        {
+            mCount += tick;
+            if (mDurationToNext < mCount)
+            {
+                bPlay = true;
+            }
+        }
+    }
+    
+    void emit(const BLOBS_TYPE& blobs)
+    {
+        if (bPlay)
+        {
+            int nextIndex = ofRandom(blobs.size());
+            if (blobs.empty() || mCurrentIndex >= blobs.size()) return;
+            Sequencer::sendNote(blobs[mCurrentIndex], mMaxDurationToNext, mChannel);
+            sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(0.5);
+            
+            // set duration to next
+            mLastPos.set(blobs[mCurrentIndex].centroid);
+            mTargetPos.set(blobs[nextIndex].centroid);
+            float dist = ofDist(blobs[mCurrentIndex  ].centroid.x, blobs[mCurrentIndex  ].centroid.y,
+                                blobs[nextIndex].centroid.x, blobs[nextIndex].centroid.y);
+            mDurationToNext = mMaxDurationToNext;
+            
+            // reset
+            bPlay = false;
+            mCurrentIndex = nextIndex;
+            mCount = 0;
+        }
+    }
+    
+    void draw(int x, int y, int w, int h)
+    {
+        if (mLastPos.match(mTargetPos) || mDurationToNext == 0) return;
+        ofPushMatrix();
+        ofTranslate(x, y);
+        ofSetColor(mCol, 127);
+        ofFill();
+        ofVec2f pos = mLastPos.interpolate(mTargetPos, ofMap(mCount, 0, mDurationToNext, 0, 1));
+        ofCircle(pos.x * w, pos.y * h, 5);
+        ofPopMatrix();
+    }
 };
 
 
@@ -300,9 +402,14 @@ public:
     {
         mWidth = 0;
         mHeight = 0;
-        mSeq.push_back(mVertSeq = new VerticalSequencer(2.5, 1, ofColor(0, 255, 255)));
-        mSeq.push_back(mVertSeq = new VerticalSequencer(2.5/4, 2, ofColor(255, 0, 255)));
-        mSeq.push_back(mOrdinalSeq = new OrdinalSequencer(0.5, 9, ofColor(255, 255, 0)));
+        mSeq.push_back(new VerticalSequencer(4, 1, ofColor(0, 255, 255)));
+        mSeq.push_back(new VerticalSequencer(1, 2, ofColor(255, 0, 255)));
+        mSeq.push_back(new OrdinalSequencer(0.25, true, 3, ofColor(127, 255, 0)));
+        mSeq.push_back(new OrdinalSequencer(1.00, true, 4, ofColor(255, 127, 0)));
+        mSeq.push_back(new RandomSequencer(0.125, 5, ofColor(255, 127, 255)));
+        mSeq.push_back(new OrdinalSequencer(2.00, true, 6, ofColor(0, 0, 255)));
+        
+        mSeq.push_back(new OrdinalSequencer(0.50, false, 9, ofColor(255, 255, 0)));
     }
     
     void setupMidi(const string& senderPoitName, const string& receiverPortName)
