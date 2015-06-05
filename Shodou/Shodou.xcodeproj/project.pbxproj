@@ -54,6 +54,11 @@
 		916196A41B1074DA00DEF800 /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 916196A11B10748500DEF800 /* Syphon.framework */; };
 		916196A61B1074F700DEF800 /* SyphonNameboundClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 916196A51B1074F700DEF800 /* SyphonNameboundClient.m */; };
 		916196A81B10751600DEF800 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 916196A71B10751600DEF800 /* CoreMIDI.framework */; };
+		919448141B222A98004AAD7F /* mainApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 919448121B222A98004AAD7F /* mainApp.cpp */; };
+		919448171B222BB1004AAD7F /* InputImageController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 919448151B222BB1004AAD7F /* InputImageController.cpp */; };
+		9194481A1B223159004AAD7F /* BlobDataController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 919448181B223159004AAD7F /* BlobDataController.cpp */; };
+		9194481D1B223386004AAD7F /* VisualBlobs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9194481B1B223386004AAD7F /* VisualBlobs.cpp */; };
+		919448221B224BBE004AAD7F /* FlowTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 919448201B224BBE004AAD7F /* FlowTools.cpp */; };
 		933A2227713C720CEFF80FD9 /* tinyxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2B40EDA85BEB63E46785BC29 /* tinyxml.cpp */; };
 		9D44DC88EF9E7991B4A09951 /* tinyxmlerror.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 832BDC407620CDBA568B713D /* tinyxmlerror.cpp */; };
 		A29D8C96AE042ECEAA1BD4F3 /* NetworkingUtilsWin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2A5B1FAD3F30C8065C396ACB /* NetworkingUtilsWin.cpp */; };
@@ -280,14 +285,21 @@
 		8DB45DE3BD6BB97E34BDB411 /* nn_index.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = nn_index.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/nn_index.h; sourceTree = SOURCE_ROOT; };
 		8E79CF8911DFABAFE23EA45B /* ofxCvConstants.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxCvConstants.h; path = ../../../addons/ofxOpenCv/src/ofxCvConstants.h; sourceTree = SOURCE_ROOT; };
 		907C5B5E104864A2D3A25745 /* ofxToggle.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxToggle.cpp; path = ../../../addons/ofxGui/src/ofxToggle.cpp; sourceTree = SOURCE_ROOT; };
-		912CB0221B1616C000816856 /* BlobsDataController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BlobsDataController.hpp; sourceTree = "<group>"; };
 		916196A11B10748500DEF800 /* Syphon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Syphon.framework; path = ../../../addons/ofxSyphon/libs/Syphon/lib/osx/Syphon.framework; sourceTree = "<group>"; };
 		916196A51B1074F700DEF800 /* SyphonNameboundClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SyphonNameboundClient.m; path = ../../../addons/ofxSyphon/libs/Syphon/src/SyphonNameboundClient.m; sourceTree = "<group>"; };
 		916196A71B10751600DEF800 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		916196BF1B10831D00DEF800 /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = utils.h; path = ../../common/utils.h; sourceTree = "<group>"; };
-		916196C21B109DED00DEF800 /* InputImageController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputImageController.hpp; sourceTree = "<group>"; };
 		916196C31B10AB0500DEF800 /* ImageProcessing.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImageProcessing.hpp; sourceTree = "<group>"; };
-		9195E8701B2161D00022AEEC /* VisualBlobs.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VisualBlobs.hpp; sourceTree = "<group>"; };
+		919448121B222A98004AAD7F /* mainApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mainApp.cpp; sourceTree = "<group>"; };
+		919448131B222A98004AAD7F /* mainApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mainApp.h; sourceTree = "<group>"; };
+		919448151B222BB1004AAD7F /* InputImageController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InputImageController.cpp; sourceTree = "<group>"; };
+		919448161B222BB1004AAD7F /* InputImageController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InputImageController.h; sourceTree = "<group>"; };
+		919448181B223159004AAD7F /* BlobDataController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BlobDataController.cpp; sourceTree = "<group>"; };
+		919448191B223159004AAD7F /* BlobDataController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BlobDataController.h; sourceTree = "<group>"; };
+		9194481B1B223386004AAD7F /* VisualBlobs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VisualBlobs.cpp; sourceTree = "<group>"; };
+		9194481C1B223386004AAD7F /* VisualBlobs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VisualBlobs.h; sourceTree = "<group>"; };
+		919448201B224BBE004AAD7F /* FlowTools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlowTools.cpp; sourceTree = "<group>"; };
+		919448211B224BBE004AAD7F /* FlowTools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FlowTools.h; sourceTree = "<group>"; };
 		9195E8791B216F180022AEEC /* MidiReceiverController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = MidiReceiverController.hpp; path = ../../common/MidiReceiverController.hpp; sourceTree = "<group>"; };
 		9195E87A1B216F180022AEEC /* MidiSenderController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = MidiSenderController.hpp; path = ../../common/MidiSenderController.hpp; sourceTree = "<group>"; };
 		9195E87B1B216F200022AEEC /* Blob.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Blob.h; path = ../../common/Blob.h; sourceTree = "<group>"; };
@@ -1395,11 +1407,18 @@
 				9195E8791B216F180022AEEC /* MidiReceiverController.hpp */,
 				9195E87A1B216F180022AEEC /* MidiSenderController.hpp */,
 				9195E87B1B216F200022AEEC /* Blob.h */,
-				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				916196C31B10AB0500DEF800 /* ImageProcessing.hpp */,
-				916196C21B109DED00DEF800 /* InputImageController.hpp */,
-				912CB0221B1616C000816856 /* BlobsDataController.hpp */,
-				9195E8701B2161D00022AEEC /* VisualBlobs.hpp */,
+				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
+				919448121B222A98004AAD7F /* mainApp.cpp */,
+				919448131B222A98004AAD7F /* mainApp.h */,
+				919448151B222BB1004AAD7F /* InputImageController.cpp */,
+				919448161B222BB1004AAD7F /* InputImageController.h */,
+				919448181B223159004AAD7F /* BlobDataController.cpp */,
+				919448191B223159004AAD7F /* BlobDataController.h */,
+				9194481B1B223386004AAD7F /* VisualBlobs.cpp */,
+				9194481C1B223386004AAD7F /* VisualBlobs.h */,
+				919448201B224BBE004AAD7F /* FlowTools.cpp */,
+				919448211B224BBE004AAD7F /* FlowTools.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -1588,6 +1607,7 @@
 			files = (
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
 				856AA354D08AB4B323081444 /* ofxBaseGui.cpp in Sources */,
+				919448141B222A98004AAD7F /* mainApp.cpp in Sources */,
 				5CBB2AB3A60F65431D7B555D /* ofxButton.cpp in Sources */,
 				B266578FC55D23BFEBC042E7 /* ofxGuiGroup.cpp in Sources */,
 				483908258D00B98B4BE69F07 /* ofxLabel.cpp in Sources */,
@@ -1614,9 +1634,11 @@
 				28090DEB5109115003E8F1C5 /* UdpSocketWin.cpp in Sources */,
 				62545D179C94265CA1389D4A /* OscOutboundPacketStream.cpp in Sources */,
 				C4782ECC372420ACE0615B74 /* OscPrintReceivedElements.cpp in Sources */,
+				919448171B222BB1004AAD7F /* InputImageController.cpp in Sources */,
 				0546D1A38E13BD319CC9755B /* OscReceivedElements.cpp in Sources */,
 				879A251454401BC0B6E4F238 /* OscTypes.cpp in Sources */,
 				63B57AC5BF4EF088491E0317 /* ofxXmlSettings.cpp in Sources */,
+				9194481D1B223386004AAD7F /* VisualBlobs.cpp in Sources */,
 				933A2227713C720CEFF80FD9 /* tinyxml.cpp in Sources */,
 				9D44DC88EF9E7991B4A09951 /* tinyxmlerror.cpp in Sources */,
 				5A4349E9754D6FA14C0F2A3A /* tinyxmlparser.cpp in Sources */,
@@ -1630,6 +1652,8 @@
 				45CC483A999BF1065A6B926C /* Distance.cpp in Sources */,
 				5CC34D433F5806179935B89D /* Flow.cpp in Sources */,
 				2023EF517ED2D8B397511D4B /* Helpers.cpp in Sources */,
+				919448221B224BBE004AAD7F /* FlowTools.cpp in Sources */,
+				9194481A1B223159004AAD7F /* BlobDataController.cpp in Sources */,
 				C602002DE761F9B52DB4400A /* ObjectFinder.cpp in Sources */,
 				7CDAD32BE4FA46701E3552C7 /* RunningBackground.cpp in Sources */,
 				10B69DE456AED1288FC9316B /* Tracker.cpp in Sources */,

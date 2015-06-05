@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ImageProcessing.hpp"
+#include "ofxOpenCv.h"
 
 class BaseImagesInterface
 {
@@ -134,8 +135,8 @@ protected:
         imp::crop(mResizedPix, mCropedPix,
                   mCropXY1->x * mResizedPix.getWidth(), mCropXY1->y * mResizedPix.getHeight(),
                   mCropXY2->x * mResizedPix.getWidth(), mCropXY2->y * mResizedPix.getHeight());
-//        imp::warpPerspective(mCropedPix, mWarpedPix, mWarpX, mWarpY);
-//        imp::threshold(mWarpedPix, mBinaryPix, mBlobThreshold);
+        //        imp::warpPerspective(mCropedPix, mWarpedPix, mWarpX, mWarpY);
+        //        imp::threshold(mWarpedPix, mBinaryPix, mBlobThreshold);
         
         setCvImageFromPixels(mCvGrayImage, mCropedPix);
         warpPerspective(mCvGrayImage, mWarpX, mWarpY);
@@ -154,7 +155,7 @@ protected:
         textureLoadData(mBinaryPix,     mBinaryTex);
     }
     
-
+    
 public:
     InputImageController()
     {
@@ -178,7 +179,7 @@ public:
     {
         const float baseWidth  = mResizedPix.getWidth();
         const float baseHeight = mResizedPix.getHeight();
-
+        
         ofPushMatrix();
         ofPushStyle();
         ofTranslate(x, y);
@@ -193,55 +194,22 @@ public:
         ofPopStyle();
         ofPopMatrix();
     }
-
 };
+
 
 
 class InputVideoController : public InputImageController<ofVideoPlayer>
 {
     typedef ofVideoPlayer basePlayer;
     const string mVideoPath;
+    
 public:
-    InputVideoController(const string& videoPath)
-    : mVideoPath(videoPath)
-    {
-        setup();
-    }
-    
-    void setup()
-    {
-        if (loadMovie(mVideoPath) == false)
-        {
-            LOG_ERROR << "failed load movie: " << mVideoPath;
-            return;
-        }
-        basePlayer::setVolume(0);
-        allocateAllPixelsAndTextures(basePlayer::getWidth(), basePlayer::getHeight());
-    }
-    
-    void update()
-    {
-        basePlayer::update();
-        if (isFrameNew())
-        {
-            preProcess(basePlayer::getPixelsRef());
-        }
-    }
-    
-    void play()
-    {
-        basePlayer::play();
-    }
-    
-    void stop()
-    {
-        basePlayer::stop();
-    }
-    
-    void togglePlay()
-    {
-        basePlayer::isPlaying() ? stop() : play();
-    }
+    InputVideoController(const string& videoPath);
+    void setup();
+    void update();
+    void play();
+    void stop();
+    void togglePlay();
 };
 
 
@@ -253,45 +221,10 @@ class InputCameraController : public InputImageController<ofVideoGrabber>
     const int mDeviceId;
     
 public:
-    InputCameraController(int w, int h, int deviceId)
-    : mWidth(w)
-    , mHeight(h)
-    , mDeviceId(deviceId)
-    {
-        setup();
-    }
-    
-    void setup()
-    {
-        baseGrabber::setDeviceID(mDeviceId);
-        baseGrabber::initGrabber(mWidth, mHeight, true);
-        allocateAllPixelsAndTextures(baseGrabber::getWidth(), baseGrabber::getHeight());
-    }
-    
-    void update()
-    {
-        baseGrabber::update();
-        if (isFrameNew())
-        {
-            preProcess(baseGrabber::getPixelsRef());
-        }
-    }
-    
-    void play()
-    {
-        if (isInitialized() == false)
-        {
-            setup();
-        }
-    }
-    
-    void stop()
-    {
-        baseGrabber::close();
-    }
-    
-    void togglePlay()
-    {
-        isInitialized() ? stop() : play();
-    }
+    InputCameraController(int w, int h, int deviceId);
+    void setup();
+    void update();
+    void play();
+    void stop();
+    void togglePlay();
 };
