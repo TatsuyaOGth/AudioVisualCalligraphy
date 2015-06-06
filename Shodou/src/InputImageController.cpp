@@ -78,6 +78,18 @@ InputCameraController::InputCameraController(int w, int h, int deviceId)
 
 void InputCameraController::setup()
 {
+    vector<ofVideoDevice> devices = listDevices();
+    
+    cout << "~~~~~~~~~~ CAMERA DEVICE ~~~~~~~~~~" << endl;
+    for(int i = 0; i < devices.size(); i++){
+        cout << devices[i].id << ": " << devices[i].deviceName;
+        if( devices[i].bAvailable ){
+            cout << endl;
+        }else{
+            cout << " - unavailable " << endl;
+        }
+    }
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
     baseGrabber::setDeviceID(mDeviceId);
     baseGrabber::initGrabber(mWidth, mHeight, true);
     allocateAllPixelsAndTextures(baseGrabber::getWidth(), baseGrabber::getHeight());

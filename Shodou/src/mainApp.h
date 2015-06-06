@@ -6,6 +6,7 @@
 #include "VisualBlobs.h"
 #include "ImageProcessing.hpp"
 #include "ofxGui.h"
+#include "ofxSyphon.h"
 
 class mainApp : public ofBaseApp
 {
@@ -28,6 +29,8 @@ class mainApp : public ofBaseApp
     ofParameter<float>  mBlobThreshold;
     ofParameter<int>    mMaxNumBlobs;
     bool bDrawGui;
+    
+    ofxSyphonServer mSyponeServer;
     
 public:
     void setup();

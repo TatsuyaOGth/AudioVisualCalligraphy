@@ -3,12 +3,13 @@
 
 // GENERAL
 //------------------------------------------------------------------------------
-//#define USE_CAMERA
+#define USE_CAMERA
 
-static const int NUM_INPUT = 2;
+static const int        NUM_INPUT = 2;
 
-static const int VISUAL_WINDOW_WIDTH  = 1280;
-static const int VISUAL_WINDOR_HEIGHT = 720;
+static const int        VISUAL_WINDOW_WIDTH  = 1280;
+static const int        VISUAL_WINDOW_HEIGHT = 720;
+static const string     MAIN_DISP_SERVER_NAME = "syphone";
 
 
 // CAMERA

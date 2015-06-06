@@ -1,0 +1,3 @@
+ofxOsc
+ofxSharedMemory
+ofxSyphon

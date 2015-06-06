@@ -34,7 +34,7 @@ void mainApp::setup()
     {
         mBaseImages.push_back(e);
     }
-    mVisualBlob = new VisualBlobs(mBaseImages, VISUAL_WINDOW_WIDTH, VISUAL_WINDOR_HEIGHT);
+    mVisualBlob = new VisualBlobs(mBaseImages, VISUAL_WINDOW_WIDTH, VISUAL_WINDOW_HEIGHT);
     
     //----------
     // init values
@@ -54,8 +54,12 @@ void mainApp::setup()
     gui.loadFromFile(GUI_FILENAME);
     gui.minimizeAll();
     bDrawGui = true;
-    
     mBlobThreshold.addListener(this, &mainApp::changedMasterThreshold);
+    
+    // setup syphone
+    //--------------------------------------------------
+    mSyponeServer.setName(MAIN_DISP_SERVER_NAME);
+
 }
 
 void mainApp::update()
@@ -85,7 +89,8 @@ void mainApp::draw()
     // render visual
     //----------
     mVisualBlob->rendering();
-    
+    // syphone publish texture
+    mSyponeServer.publishTexture(&mVisualBlob->getTextureRef());
     
     //----------
     // draw moniter
