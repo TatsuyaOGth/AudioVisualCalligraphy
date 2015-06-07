@@ -4,9 +4,10 @@ using namespace flowTools;
 
 //--------------------------------------------------------------
 void FlowTools::setup()
-{    
-    drawWidth = 1280;
-    drawHeight = 720;
+{
+    mColor.set(0.5, 0.5, 0.5, 1);
+    drawWidth = VISUAL_WINDOW_WIDTH;
+    drawHeight = VISUAL_WINDOW_HEIGHT;
     // process all but the density on 16th resolution
     flowWidth = drawWidth/4;
     flowHeight = drawHeight/4;
@@ -161,6 +162,8 @@ void FlowTools::setupGui(){
     gui.minimizeAll();
     
     toggleGuiDraw = true;
+    
+    gui.setPosition(ofGetWidth() - gui.getWidth() - 20, 10);
 }
 
 void FlowTools::genEmergence(){
@@ -178,7 +181,7 @@ void FlowTools::genEmergence(){
             if (flexDrawForces[i].getType() == FT_VELOCITY){
                 flexDrawForces[i].setForce(velocity);
             }else if (flexDrawForces[i].getType() == FT_DENSITY){
-                flexDrawForces[i].setForce(ofVec4f(1, 0, 0, 1)); // 色の設定
+                flexDrawForces[i].setForce(mColor); // 色の設定
             }
             flexDrawForces[i].applyForce(point);
         }
@@ -287,18 +290,12 @@ void FlowTools::draw(){
     int windowWidth = ofGetWindowWidth();
     int windowHeight = ofGetWindowHeight();
     ofClear(0,0);
+//    ofSetColor(0, 255, 0, 255);
     
     ofPushStyle();
 //    fluid.getObstacle().draw(0, 0, windowWidth, windowHeight);
     fluid.draw(0, 0, windowWidth, windowHeight);
     ofEnableBlendMode(OF_BLENDMODE_ADD);
-    //    if (particleFlow.isActive())
-    //        particleFlow.draw(0, 0, windowWidth, windowHeight);
-    if (showLogo) {
-        ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
-        ofSetColor(255,255,255,255);
-//        flowToolsLogoImage.draw(0, 0, windowWidth, windowHeight);
-    }
     
     ofPopStyle();
 }

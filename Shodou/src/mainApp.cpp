@@ -35,6 +35,7 @@ void mainApp::setup()
         mBaseImages.push_back(e);
     }
     mVisualBlob = new VisualBlobs(mBaseImages, VISUAL_WINDOW_WIDTH, VISUAL_WINDOW_HEIGHT);
+    mVisualBlob->setBlobDataController(&mBDC);
     
     //----------
     // init values
@@ -103,6 +104,7 @@ void mainApp::draw()
     }
     
     if (bDrawGui) gui.draw();
+//    if (bDrawGui) VisualBlobs::smFlowTools->drawGui();
     ofSetWindowTitle(ofToString(ofGetFrameRate()));
 }
 
@@ -272,7 +274,7 @@ void mainApp::mousePressed(int x, int y, int mouse)
         addBlobAtPoint(cf, targetX, targetY, cfW, cfH, offsetW);
     }
     
-    VisualBlobs::smFlowTools->emit(x, y);
+//    VisualBlobs::smFlowTools->emit(x, y);
 }
 
 //-----------------------------------------------------------------------------------------------

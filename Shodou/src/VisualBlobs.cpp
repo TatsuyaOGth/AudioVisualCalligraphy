@@ -43,6 +43,35 @@ ofTexture& VisualBlobs::getJoinedTexture(baseimages_type& images, float width, f
     return smFbo.getTextureReference();
 }
 
+void VisualBlobs::getJoinedContourseBlob(baseimages_type& images, vector<ofxCvBlob>& dst, float width, float height)
+{
+    dst.clear();
+    int n = images.size();
+    for (int i = 0; i < n; ++i)
+    {
+        int x = (width / n) * i;
+        int y = 0;
+        int w =  width / n;
+        int h = height;
+        float orgW = images[i]->getCvContourFinder().getWidth();
+        float orgH = images[i]->getCvContourFinder().getHeight();
+
+        for (auto& e : images[i]->getCvContourFinder().blobs)
+        {
+            dst.push_back(e);
+            for (int j = 0; j < e.pts.size(); ++j)
+            {
+                dst.back().pts[j].x = ofMap(e.pts[j].x, 0, orgW, x, x + w);
+                dst.back().pts[j].y = ofMap(e.pts[j].y, 0, orgH, y, y + h);
+//                dst.back().boundingRect.x = ofMap(dst.back().boundingRect.x, 0, orgW, x, x + w);
+//                dst.back().boundingRect.y = ofMap(dst.back().boundingRect.y, 0, orgH, y, y + h);
+//                dst.back().boundingRect.width  = ofMap(dst.back().boundingRect.width,  0, orgW, x, x + w);
+//                dst.back().boundingRect.height = ofMap(dst.back().boundingRect.height, 0, orgH, y, y + h);
+            }
+        }
+    }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,24 +87,27 @@ protected:
     
 public:
     BaseAnimation(const BLOB_TYPE* blob) : mBlob(blob) {}
+    
+    float getAlpha()
+    {
+        return ofxAnimationPrimitives::Easing::Cubic::easeOut(getLife());
+    }
 };
 
 //-----------------------------------------------------------------------------------------------
 class TwinkBlob : public BaseAnimation
 {
     ofColor mCol;
-    float mVec;
     
 public:
-    TwinkBlob(const BLOB_TYPE* blob) : BaseAnimation(blob)
+    TwinkBlob(const BLOB_TYPE* blob, ofColor col)
+    : BaseAnimation(blob)
+    , mCol(col)
     {
-        mCol = ofColor::fromHsb(ofRandom(255), 200, 255);
-        mVec = 0;
     }
     void draw()
     {
-        ofSetColor(mCol, getLife() * 255);
-        mVec += 0.5;
+        ofSetColor(mCol, getAlpha() * 255);
         
         ofFill();
         ofPushMatrix();
@@ -84,9 +116,65 @@ public:
         ofBeginShape();
         for (const auto& p : mBlob->pts)
         {
-            ofVertex(p.x * VisualBlobs::smRemapedRect.width, p.y * VisualBlobs::smRemapedRect.height);
+            ofVertex(p.x * VisualBlobs::smRemapedRect.width  + ofRandom(-1, 1),
+                     p.y * VisualBlobs::smRemapedRect.height + ofRandom(-1, 1));
         }
         VisualBlobs::smWashiImage.unbind();
+        ofEndShape();
+        ofPopMatrix();
+    }
+};
+
+//-----------------------------------------------------------------------------------------------
+class BlobEdge : public BaseAnimation
+{
+    ofColor mCol;
+    ofVboMesh mMesh;
+    
+public:
+    BlobEdge(const BLOB_TYPE* blob, ofColor col)
+    : BaseAnimation(blob)
+    , mCol(col)
+    {
+        for (const auto& p : mBlob->pts)
+        {
+            mMesh.addColor(ofColor::fromHsb(mCol.getHue() + ofRandom(-20, 20), mCol.getSaturation(), mCol.getBrightness()));
+            mMesh.addVertex(ofPoint(p.x * VisualBlobs::smRemapedRect.width, p.y * VisualBlobs::smRemapedRect.height));
+        }
+        mMesh.setMode(OF_PRIMITIVE_LINE_LOOP);
+    }
+    void update()
+    {
+        for (int i = 0; i < mMesh.getNumVertices(); ++i)
+        {
+            ofPoint p = mMesh.getVertex(i);
+            mMesh.setVertex(i, ofPoint(p.x + ofRandom(-1.5, 1.5),
+                                       p.y + ofRandom(-1.5, 1.5)));
+        }
+        if (getLife() < 0.75)
+        {
+            for (int i = 0; i < mMesh.getNumVertices(); ++i)
+            {
+                ofColor c = mMesh.getColor(i);
+                if (ofRandomf() > 0)
+                {
+                    mMesh.setColor(i, c);
+                }
+                else {
+                    mMesh.setColor(i, ofColor(0, 0, 0, 0));
+                }
+            }
+        }
+    }
+    void draw()
+    {
+        ofSetColor(mCol, getAlpha() * 255);
+        ofNoFill();
+        ofSetLineWidth(1);
+        ofPushMatrix();
+        ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
+        ofBeginShape();
+        mMesh.draw();
         ofEndShape();
         ofPopMatrix();
     }
@@ -98,37 +186,47 @@ class ParticleBlobEdge : public BaseAnimation
     ofColor mCol;
     int mValiation;
     float mSize;
+    vector<ofPoint> mPos;
+    vector<float> mDeg;
+    vector<float> mSpeed;
+    int mNum;
     
 public:
-    ParticleBlobEdge(const BLOB_TYPE* blob) : BaseAnimation(blob)
+    ParticleBlobEdge(const BLOB_TYPE* blob, ofColor col)
+    : BaseAnimation(blob)
+    , mCol(col)
     {
-        mCol = ofColor(255, 255, 255);
         mValiation = 0;
         mSize = ofRandom(100, 150);
+        mNum = 0;
+        for (const auto& e : blob->pts)
+        {
+            mDeg.push_back(e.angle(blob->centroid));
+            mSpeed.push_back(blob->centroid.distance(e) * 2);
+            mPos.push_back(ofPoint(e.x * VisualBlobs::smRemapedRect.width,
+                                   e.y * VisualBlobs::smRemapedRect.height));
+            mNum++;
+        }
+    }
+    void update()
+    {
+        for (int i = 0; i < mNum; ++i)
+        {
+            mPos[i].y -= mSpeed[i];
+        }
     }
     void draw()
     {
-        ofSetColor(mCol, getLife() * 255);
-        
-        switch (mValiation)
+        ofSetColor(mCol, getAlpha() * 255);
+        for (int i = 0; i < mNum; ++i)
         {
-            case 0: drawPoints(); break;
-                
+            ofPushMatrix();
+            ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
+            ofTranslate(mPos[i]);
+            ofRotateZ(mDeg[i]);
+            ofCircle(0, 0, ofxAnimationPrimitives::Easing::Quad::easeOut(getLife()) * 2);
+            ofPopMatrix();
         }
-    }
-    
-    void drawPoints()
-    {
-        const ofPoint& p = mBlob->centroid;
-        for (auto& e : mBlob->pts)
-        {
-            
-        }
-    }
-    
-    void drawPointLines()
-    {
-        
     }
 };
 
@@ -174,6 +272,38 @@ public:
             return ofMap(life, 0, fadeoutTime, 0, 1);
         }
         return 1;
+    }
+};
+
+
+class ZoomCamera : public ofxAnimationPrimitives::Instance
+{
+    baseimages_type mImages;
+    ofRectangle mSrcRect, mDstRect;
+    
+public:
+    ZoomCamera(baseimages_type& images) : mImages(images)
+    {
+        
+    }
+    void update()
+    {
+        
+    }
+    
+    void draw()
+    {
+        ofSetColor(255, getAlpha() * 90);
+        const ofTexture& tex = VisualBlobs::getJoinedTexture(mImages,
+                                      VisualBlobs::smRemapedRect.width,
+                                      VisualBlobs::smRemapedRect.height,
+                                      VisualBlobs::GRAY);
+        
+    }
+    
+    float getAlpha()
+    {
+        return ofxAnimationPrimitives::Easing::Cubic::easeOut(getLife());
     }
 };
 
@@ -288,12 +418,49 @@ public:
 //-----------------------------------------------------------------------------------------------
 class SceneVfx : public BaseScene
 {
+    vector<ofxCvBlob> mBlobs;
+    
+    
 public:
     SceneVfx(baseimages_type& baseImageInterfacePtr, const float width, const float height)
     : BaseScene(baseImageInterfacePtr, width, height)
     {
-    }    
+    }
+    void update()
+    {
+    }
+    void draw()
+    {
+        ofSetColor(255, getFadeAlpha());
+        
+        VisualBlobs::getJoinedContourseBlob(mImages, mBlobs, VisualBlobs::smRemapedRect.width, VisualBlobs::smRemapedRect.height);
+        ofPushMatrix();
+        ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
+        for (auto e : mBlobs)
+        {
+            ofNoFill();
+            ofBeginShape();
+            for (int i = 0; i < e.nPts; i++){
+                ofVertex(e.pts[i].x, e.pts[i].y);
+            }
+            ofEndShape(true);
+        }
+        ofPopMatrix();
+    }
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneVfx);
+};
+
+
+
+
+class EmptyScene : public ofxAnimationPrimitives::Scene
+{
+    
+public:
+    EmptyScene()
+    {
+    }
+    OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(EmptyScene);
 };
 
 
@@ -310,7 +477,8 @@ VisualBlobs::VisualBlobs(baseimages_type& baseImageInterfacePtr, const float wid
     mScenes.addScene<SceneGray>(baseImageInterfacePtr, width, height);
     mScenes.addScene<SceneBinary>(baseImageInterfacePtr, width, height);
     mScenes.addScene<SceneVfx>(baseImageInterfacePtr, width, height);
-    
+    mScenes.addScene<EmptyScene>();
+
     mSceneNames = mScenes.getSceneNames();
     mCurrentNumScene = 0;
     mScenes.changeScene(mSceneNames[mCurrentNumScene], 2);
@@ -339,17 +507,22 @@ void VisualBlobs::update()
 
 void VisualBlobs::rendering()
 {
-    ofBackground(0, 0, 0, 0);
-    ofSetColor(255, 255, 255);
-    
     glClearColor(0, 0, 0, 0);
     mFbo.begin();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    ofBackground(0);
+    ofSetColor(255);
+    
     smFlowTools->draw();
     mScenes.draw();
-    
     mAnimations.draw();
+
+    mBlobData->drawSeqAll(VisualBlobs::smRemapedRect.x,
+                          VisualBlobs::smRemapedRect.y,
+                          VisualBlobs::smRemapedRect.width,
+                          VisualBlobs::smRemapedRect.height);
+
     
     mFbo.end();
 }
@@ -366,13 +539,48 @@ void VisualBlobs::changeScene(float fadeduration)
 
 void VisualBlobs::blobNoteEvent(BlobNoteEvent &e)
 {
+    if (e.channel == 1)
+    {
+        mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor(255, 255, 255))->play(6);
+    }
+    
+    if (e.channel == 2)
+    {
+        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(6);
+    }
+    
     if (e.channel == 3)
     {
-        mAnimations.createInstance<TwinkBlob>(e.blobPtr)->play(1);
-//        mAnimations.createInstance<RippleBlob>(e.blobPtr->centroid.x * smWidth,
-//                                               e.blobPtr->centroid.y * smHeight,
-//                                               ofMap(e.blobPtr->length, 20, 200, 20, 60, true),
-//                                               ofMap(e.blobPtr->length, 20, 200, 40, 100, true),
-//                                               0.3, 1.0)->play(1.5);
+        mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor::fromHsb(ofRandom(255), 255, 255))->play(6);
+//        VisualBlobs::smFlowTools->emit(e.blobPtr->centroid.x * smRemapedRect.width + smRemapedRect.x,
+//                                       e.blobPtr->centroid.x * smRemapedRect.height + smRemapedRect.y);
+        VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
+
     }
+    if (e.channel == 4)
+    {
+        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(3);
+        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(4, 0.5);
+        
+//        VisualBlobs::smFlowTools->emit(e.blobPtr->centroid.x * smRemapedRect.width + smRemapedRect.x,
+//                                       e.blobPtr->centroid.x * smRemapedRect.height + smRemapedRect.y);
+        VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
+    }
+    if (e.channel == 5)
+    {
+        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(6);
+//        VisualBlobs::smFlowTools->emit(e.blobPtr->centroid.x * smRemapedRect.width + smRemapedRect.x,
+//                                       e.blobPtr->centroid.x * smRemapedRect.height + smRemapedRect.y);
+    }
+    if (e.channel == 6)
+    {
+        mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor::fromHsb(ofRandom(255), 120, 255))->play(9);
+        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(9);
+//        VisualBlobs::smFlowTools->emit(e.blobPtr->centroid.x * smRemapedRect.width + smRemapedRect.x,
+//                                       e.blobPtr->centroid.x * smRemapedRect.height + smRemapedRect.y);
+        VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
+    }
+    
+    VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
+
 }

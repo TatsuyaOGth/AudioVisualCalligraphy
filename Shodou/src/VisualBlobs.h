@@ -6,17 +6,9 @@
 #include "ofxAnimationPrimitives.h"
 #include "InputImageController.h"
 #include "FlowTools.h"
+#include "BlobDataController.h"
 
 typedef const vector<BaseImagesInterface*> baseimages_type;
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//  MAIN VISUAL CLASS
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////
 
 class VisualBlobs
 {
@@ -32,6 +24,9 @@ class VisualBlobs
     
     // animations
     ofxAnimationPrimitives::InstanceManager mAnimations;
+    
+    // sequencer
+    BlobsDataController* mBlobData;
     
 public:
     VisualBlobs(baseimages_type& baseImageInterfacePtr, const float width, const float height);
@@ -51,6 +46,11 @@ public:
         return mAnimations;
     }
     
+    inline void setBlobDataController(BlobsDataController* bdc)
+    {
+        mBlobData = bdc;
+    }
+    
     //---------
     // static shared value and function
     //---------
@@ -66,4 +66,5 @@ public:
     
     static void setupFbo(float w, float h);
     static ofTexture& getJoinedTexture(baseimages_type& images, float width, float height, TargetTexture targetTexture);
+    static void getJoinedContourseBlob(baseimages_type& images, vector<ofxCvBlob>& dst, float width, float height);
 };

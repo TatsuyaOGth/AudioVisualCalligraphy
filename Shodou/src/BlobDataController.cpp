@@ -1,6 +1,5 @@
 #include "BlobDataController.h"
 
-
 VerticalSequencer::VerticalSequencer(float loopTime, int channel, ofColor col)
 {
     mChannel = channel;
@@ -46,9 +45,9 @@ void VerticalSequencer::emit(const BLOBS_TYPE& blobs)
 void VerticalSequencer::draw(int x, int y, int w, int h)
 {
     ofPushStyle();
-    ofSetColor(mCol, 127);
+    ofSetColor(mCol);
     ofFill();
-    ofSetLineWidth(1);
+    ofSetLineWidth(10);
     float posY1 = ofMap(mLastPos, 0, mLoopTime, y, y + h);
     float posY2 = ofMap(mPos, 0, mLoopTime, y, y + h);
     ofRect(x, posY1, x + w, posY2 - posY1);
@@ -138,7 +137,7 @@ void OrdinalSequencer::draw(int x, int y, int w, int h)
     if (mLastPos.match(mTargetPos) || mDurationToNext == 0) return;
     ofPushMatrix();
     ofTranslate(x, y);
-    ofSetColor(mCol, 127);
+    ofSetColor(mCol);
     ofFill();
     ofVec2f pos = mLastPos.interpolate(mTargetPos, ofMap(mCount, 0, mDurationToNext, 0, 1));
     ofCircle(pos.x * w, pos.y * h, 5);
@@ -212,7 +211,7 @@ void RandomSequencer::draw(int x, int y, int w, int h)
     if (mLastPos.match(mTargetPos) || mDurationToNext == 0) return;
     ofPushMatrix();
     ofTranslate(x, y);
-    ofSetColor(mCol, 127);
+    ofSetColor(mCol);
     ofFill();
     ofVec2f pos = mLastPos.interpolate(mTargetPos, ofMap(mCount, 0, mDurationToNext, 0, 1));
     ofCircle(pos.x * w, pos.y * h, 5);
@@ -227,12 +226,13 @@ void RandomSequencer::draw(int x, int y, int w, int h)
 
 BlobsDataController::BlobsDataController()
 {
-    mSeq.push_back(new VerticalSequencer(4, 1, ofColor(0, 255, 255)));
-    mSeq.push_back(new VerticalSequencer(1, 2, ofColor(255, 0, 255)));
-    mSeq.push_back(new OrdinalSequencer(0.25, true, 3, ofColor(127, 255, 0)));
-    mSeq.push_back(new OrdinalSequencer(1.00, true, 4, ofColor(255, 127, 0)));
-    mSeq.push_back(new RandomSequencer(0.125, 5, ofColor(255, 127, 255)));
-    mSeq.push_back(new OrdinalSequencer(2.00, true, 6, ofColor(0, 0, 255)));
+    float pct = 1.8;
+    mSeq.push_back(new VerticalSequencer(4 * pct, 1, ofColor(0, 255, 255)));
+    mSeq.push_back(new VerticalSequencer(2 * pct, 2, ofColor(255, 0, 255)));
+    mSeq.push_back(new OrdinalSequencer(0.25  * pct, true, 3, ofColor(127, 255, 0)));
+    mSeq.push_back(new OrdinalSequencer(1.00 * pct, true, 4, ofColor(255, 127, 0)));
+    mSeq.push_back(new RandomSequencer(0.125 * pct, 5, ofColor(255, 127, 255)));
+    mSeq.push_back(new OrdinalSequencer(2.00 * pct, true, 6, ofColor(0, 0, 255)));
     
     mSeq.push_back(new OrdinalSequencer(0.50, false, 9, ofColor(255, 255, 0)));
     
@@ -350,4 +350,20 @@ void BlobsDataController::removeBlob()
 const BLOBS_TYPE& BlobsDataController::getBlobsRef() const
 {
     return mBlobs;
+}
+
+void BlobsDataController::drawSeq(int index, int x, int y, int w, int h)
+{
+    if (index >= 0 || index < mSeq.size())
+    {
+        mSeq[index]->draw(x, y, w, h);
+    }
+}
+
+void BlobsDataController::drawSeqAll(int x, int y, int w, int h)
+{
+    for (auto e : mSeq)
+    {
+        e->draw(x, y, w, h);
+    }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "../../common/constants.h"
 #include "ofxFlowTools.h"
 #include "ofxGui.h"
 
@@ -17,7 +18,9 @@ public:
     void drawGui();
     void emit(int x, int y);
     void setTexture(ofTexture& tex);
-    
+    void setColor(ofVec4f color){
+        mColor.set(color);
+    }
     
     ofVec2f				lastMouse;
     
@@ -86,5 +89,7 @@ public:
     ofVec2f center,point,last_point;
     bool isGen;
     int genCounter;
+    
+    ofVec4f mColor;
     
 };

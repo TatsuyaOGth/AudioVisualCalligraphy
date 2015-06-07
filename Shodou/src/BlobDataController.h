@@ -4,7 +4,6 @@
 #include "utils.h"
 #include "ofxOpenCv.h"
 #include "Blob.h"
-#include "VisualBlobs.h"
 #include "ofxAnimationPrimitives.h"
 #include "MidiSenderController.hpp"
 #include "MIdiReceiverController.hpp"
@@ -181,4 +180,7 @@ public:
     void addBlob(ofxCvBlob& cvBlob, float w, float h, float offsetW);
     void removeBlob();
     const BLOBS_TYPE& getBlobsRef() const;
+    
+    void drawSeq(int index, int x, int y, int w, int h);
+    void drawSeqAll(int x, int y, int w, int h);
 };
