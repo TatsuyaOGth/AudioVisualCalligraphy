@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include "../../common/utils.h"
+#include "utils.h"
 #include "ofxOpenCv.h"
 #include "ofxCv.h"
 

@@ -147,8 +147,6 @@ protected:
         imp::crop(mResizedPix, mCropedPix,
                   mCropXY1->x * mResizedPix.getWidth(), mCropXY1->y * mResizedPix.getHeight(),
                   mCropXY2->x * mResizedPix.getWidth(), mCropXY2->y * mResizedPix.getHeight());
-        //        imp::warpPerspective(mCropedPix, mWarpedPix, mWarpX, mWarpY);
-        //        imp::threshold(mWarpedPix, mBinaryPix, mBlobThreshold);
         
         setCvImageFromPixels(mCvGrayImage, mCropedPix);
         warpPerspective(mCvGrayImage, mWarpX, mWarpY);

@@ -8,9 +8,7 @@
 ofFbo    VisualBlobs::smFbo;
 float    VisualBlobs::smWidth;
 float    VisualBlobs::smHeight;
-ofRectangle VisualBlobs::smRemapedRect;
 ofImage  VisualBlobs::smWashiImage;
-FlowTools* VisualBlobs::smFlowTools;
 
 
 void VisualBlobs::setupFbo(float w, float h)
@@ -20,58 +18,6 @@ void VisualBlobs::setupFbo(float w, float h)
         smFbo.allocate(w, h, GL_RGBA);
     }
 }
-
-ofTexture& VisualBlobs::getJoinedTexture(baseimages_type& images, float width, float height, TargetTexture targetTexture)
-{
-    setupFbo(width, height);
-    glClearColor(0, 0, 0, 0);
-    smFbo.begin();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    int n = images.size();
-    int i= 0;
-    for (int i = 0; i < n; ++i)
-    {
-        int x = (width / n) * i;
-        int w =  width / n;
-        switch (targetTexture)
-        {
-            case GRAY:   images[i]->getWarpedTextureRef().draw(x, 0, w, height); break;
-            case BINARY: images[i]->getBinaryTextureRef().draw(x, 0, w, height); break;
-        }
-    }
-    smFbo.end();
-    return smFbo.getTextureReference();
-}
-
-void VisualBlobs::getJoinedContourseBlob(baseimages_type& images, vector<ofxCvBlob>& dst, float width, float height)
-{
-    dst.clear();
-    int n = images.size();
-    for (int i = 0; i < n; ++i)
-    {
-        int x = (width / n) * i;
-        int y = 0;
-        int w =  width / n;
-        int h = height;
-        float orgW = images[i]->getCvContourFinder().getWidth();
-        float orgH = images[i]->getCvContourFinder().getHeight();
-
-        for (auto& e : images[i]->getCvContourFinder().blobs)
-        {
-            dst.push_back(e);
-            for (int j = 0; j < e.pts.size(); ++j)
-            {
-                dst.back().pts[j].x = ofMap(e.pts[j].x, 0, orgW, x, x + w);
-                dst.back().pts[j].y = ofMap(e.pts[j].y, 0, orgH, y, y + h);
-//                dst.back().boundingRect.x = ofMap(dst.back().boundingRect.x, 0, orgW, x, x + w);
-//                dst.back().boundingRect.y = ofMap(dst.back().boundingRect.y, 0, orgH, y, y + h);
-//                dst.back().boundingRect.width  = ofMap(dst.back().boundingRect.width,  0, orgW, x, x + w);
-//                dst.back().boundingRect.height = ofMap(dst.back().boundingRect.height, 0, orgH, y, y + h);
-            }
-        }
-    }
-}
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -113,16 +59,13 @@ public:
         ofSetColor(mCol, getAlpha() * 255);
         
         ofFill();
-        ofPushMatrix();
-        ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
         ofBeginShape();
         for (const auto& p : mBlob->pts)
         {
-            ofVertex(p.x * VisualBlobs::smRemapedRect.width  + ofRandom(-1, 1),
-                     p.y * VisualBlobs::smRemapedRect.height + ofRandom(-1, 1));
+            ofVertex(p.x * ofGetWidth()  + ofRandom(-1, 1),
+                     p.y * ofGetHeight() + ofRandom(-1, 1));
         }
         ofEndShape();
-        ofPopMatrix();
     }
 };
 
@@ -140,7 +83,7 @@ public:
         for (const auto& p : mBlob->pts)
         {
             mMesh.addColor(ofColor::fromHsb(mCol.getHue() + ofRandom(-20, 20), mCol.getSaturation(), mCol.getBrightness()));
-            mMesh.addVertex(ofPoint(p.x * VisualBlobs::smRemapedRect.width, p.y * VisualBlobs::smRemapedRect.height));
+            mMesh.addVertex(ofPoint(p.x * ofGetWidth(), p.y * ofGetHeight()));
         }
         mMesh.setMode(OF_PRIMITIVE_LINE_LOOP);
     }
@@ -173,7 +116,7 @@ public:
         ofNoFill();
         ofSetLineWidth(1);
         ofPushMatrix();
-        ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
+        ofTranslate(0, 0);
         ofBeginShape();
         mMesh.draw();
         ofEndShape();
@@ -204,8 +147,8 @@ public:
         {
             mDeg.push_back(e.angle(blob->centroid));
             mSpeed.push_back(blob->centroid.distance(e) * 2);
-            mPos.push_back(ofPoint(e.x * VisualBlobs::smRemapedRect.width,
-                                   e.y * VisualBlobs::smRemapedRect.height));
+            mPos.push_back(ofPoint(e.x * ofGetWidth(),
+                                   e.y * ofGetHeight()));
             mNum++;
         }
     }
@@ -222,7 +165,7 @@ public:
         for (int i = 0; i < mNum; ++i)
         {
             ofPushMatrix();
-            ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
+            ofTranslate(0, 0);
             ofTranslate(mPos[i]);
             ofRotateZ(mDeg[i]);
             ofCircle(0, 0, ofxAnimationPrimitives::Easing::Quad::easeOut(getLife()) * 2);
@@ -277,37 +220,6 @@ public:
 };
 
 
-class ZoomCamera : public ofxAnimationPrimitives::Instance
-{
-    baseimages_type mImages;
-    ofRectangle mSrcRect, mDstRect;
-    
-public:
-    ZoomCamera(baseimages_type& images) : mImages(images)
-    {
-        
-    }
-    void update()
-    {
-        
-    }
-    
-    void draw()
-    {
-        ofSetColor(255, getAlpha() * 90);
-        const ofTexture& tex = VisualBlobs::getJoinedTexture(mImages,
-                                      VisualBlobs::smRemapedRect.width,
-                                      VisualBlobs::smRemapedRect.height,
-                                      VisualBlobs::GRAY);
-        
-    }
-    
-    float getAlpha()
-    {
-        return ofxAnimationPrimitives::Easing::Cubic::easeOut(getLife());
-    }
-};
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -318,7 +230,7 @@ public:
 class BaseScene : public ofxAnimationPrimitives::Scene
 {
 protected:
-    baseimages_type mImages;
+    BaseImagesInterface* mImages;
     const float mWidth;
     const float mHeight;
     
@@ -328,7 +240,7 @@ protected:
     }
     
 public:
-    BaseScene(baseimages_type& baseImageInterfacePtr, const float width, const float height)
+    BaseScene(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height)
     : mImages(baseImageInterfacePtr)
     , mWidth(width)
     , mHeight(height)
@@ -340,35 +252,17 @@ public:
 class SceneGray : public BaseScene
 {
 public:
-    SceneGray(baseimages_type& baseImageInterfacePtr, const float width, const float height)
+    SceneGray(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height)
     : BaseScene(baseImageInterfacePtr, width, height)
     {
     }
     void update()
     {
-        float w = 0;
-        float h = 0;
-        for (const auto& e : mImages)
-        {
-            w += e->getWarpedPixelsRef().getWidth();
-            if (h < e->getWarpedPixelsRef().getHeight()) h = e->getWarpedPixelsRef().getHeight();
-        }
-        
-        float pDifW = 1 - ((mWidth - w) / mWidth);
-        float dstH = h * pDifW;
-        
-        VisualBlobs::smRemapedRect.x = 0;
-        VisualBlobs::smRemapedRect.y = mHeight * 0.5 - dstH * 0.5;
-        VisualBlobs::smRemapedRect.width  = mWidth;
-        VisualBlobs::smRemapedRect.height = dstH;
     }
     void draw()
     {
         ofSetColor(255, getFadeAlpha());
-        VisualBlobs::getJoinedTexture(mImages,
-                                      VisualBlobs::smRemapedRect.width,
-                                      VisualBlobs::smRemapedRect.height,
-                                      VisualBlobs::GRAY).draw(VisualBlobs::smRemapedRect);
+        mImages->getGrayTextureRef().draw(0, 0, ofGetWidth(), ofGetHeight());
     }
     
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneGray);
@@ -381,36 +275,18 @@ class SceneBinary : public BaseScene
 {
     
 public:
-    SceneBinary(baseimages_type& baseImageInterfacePtr, const float width, const float height)
+    SceneBinary(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height)
     : BaseScene(baseImageInterfacePtr, width, height)
     {
         
     }
     void update()
     {
-        float w = 0;
-        float h = 0;
-        for (const auto& e : mImages)
-        {
-            w += e->getBinaryPixelsRef().getWidth();
-            if (h < e->getBinaryPixelsRef().getHeight()) h = e->getBinaryPixelsRef().getHeight();
-        }
-        
-        float pDifW = 1 - ((mWidth - w) / mWidth);
-        float dstH = h * pDifW;
-        
-        VisualBlobs::smRemapedRect.x = 0;
-        VisualBlobs::smRemapedRect.y = mHeight * 0.5 - dstH * 0.5;
-        VisualBlobs::smRemapedRect.width  = mWidth;
-        VisualBlobs::smRemapedRect.height = dstH;
     }
     void draw()
     {
         ofSetColor(255, getFadeAlpha());
-        VisualBlobs::getJoinedTexture(mImages,
-                                      VisualBlobs::smRemapedRect.width,
-                                      VisualBlobs::smRemapedRect.height,
-                                      VisualBlobs::BINARY).draw(VisualBlobs::smRemapedRect);
+        mImages->getBinaryTextureRef().draw(0, 0, ofGetWidth(), ofGetHeight());
     }
     
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneBinary);
@@ -423,7 +299,7 @@ class SceneVfx : public BaseScene
     
     
 public:
-    SceneVfx(baseimages_type& baseImageInterfacePtr, const float width, const float height)
+    SceneVfx(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height)
     : BaseScene(baseImageInterfacePtr, width, height)
     {
     }
@@ -434,19 +310,16 @@ public:
     {
         ofSetColor(255, getFadeAlpha());
         
-        VisualBlobs::getJoinedContourseBlob(mImages, mBlobs, VisualBlobs::smRemapedRect.width, VisualBlobs::smRemapedRect.height);
-        ofPushMatrix();
-        ofTranslate(VisualBlobs::smRemapedRect.x, VisualBlobs::smRemapedRect.y);
-        for (auto e : mBlobs)
-        {
-            ofNoFill();
-            ofBeginShape();
-            for (int i = 0; i < e.nPts; i++){
-                ofVertex(e.pts[i].x, e.pts[i].y);
-            }
-            ofEndShape(true);
-        }
-        ofPopMatrix();
+//        VisualBlobs::getJoinedContourseBlob(mImages, mBlobs, ofGetWidth(), ofGetHeight());
+//        for (auto e : mBlobs)
+//        {
+//            ofNoFill();
+//            ofBeginShape();
+//            for (int i = 0; i < e.nPts; i++){
+//                ofVertex(e.pts[i].x, e.pts[i].y);
+//            }
+//            ofEndShape(true);
+//        }
     }
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneVfx);
 };
@@ -467,7 +340,7 @@ public:
 
 
 
-VisualBlobs::VisualBlobs(baseimages_type& baseImageInterfacePtr, const float width, const float height)
+VisualBlobs::VisualBlobs(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height)
 : mImages(baseImageInterfacePtr)
 , mWidth(width)
 , mHeight(height)
@@ -488,22 +361,12 @@ VisualBlobs::VisualBlobs(baseimages_type& baseImageInterfacePtr, const float wid
     smWidth = width;
     smHeight = height;
     smWashiImage.loadImage("washi.png");
-    
-    smFlowTools = new FlowTools();
-//    smFlowTools->setTexture();
-    smFlowTools->setup();
-}
+    }
 
 void VisualBlobs::update()
 {
     mScenes.update();
     mAnimations.update();
-    
-//    smFlowTools->setTexture(VisualBlobs::getJoinedTexture(mImages,
-//                                  VisualBlobs::smRemapedRect.width,
-//                                  VisualBlobs::smRemapedRect.height,
-//                                  VisualBlobs::BINARY));
-    smFlowTools->update();
 }
 
 void VisualBlobs::rendering()
@@ -515,15 +378,9 @@ void VisualBlobs::rendering()
     ofBackground(0);
     ofSetColor(255);
     
-    smFlowTools->draw();
     mScenes.draw();
     mAnimations.draw();
-
-    mBlobData->drawSeqAll(VisualBlobs::smRemapedRect.x,
-                          VisualBlobs::smRemapedRect.y,
-                          VisualBlobs::smRemapedRect.width,
-                          VisualBlobs::smRemapedRect.height);
-
+    mBlobData->drawSeqAll(0, 0, ofGetWidth(), ofGetHeight());
     
     mFbo.end();
 }
@@ -553,14 +410,12 @@ void VisualBlobs::blobNoteEvent(BlobNoteEvent &e)
     if (e.channel == 3)
     {
         mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor::fromHsb(ofRandom(255), 255, 255))->play(6);
-        VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
         
     }
     if (e.channel == 4)
     {
         mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(3);
         mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(4, 0.5);
-        VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
     }
     if (e.channel == 5)
     {
@@ -570,9 +425,5 @@ void VisualBlobs::blobNoteEvent(BlobNoteEvent &e)
     {
         mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor::fromHsb(ofRandom(255), 120, 255))->play(9);
         mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(9);
-        VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
     }
-    
-    VisualBlobs::smFlowTools->emit(ofRandomWidth(), ofRandomHeight());
-
 }

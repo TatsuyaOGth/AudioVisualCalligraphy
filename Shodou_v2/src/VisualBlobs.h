@@ -1,18 +1,15 @@
 #pragma once
 
 #include "ofMain.h"
-#include "../../common/utils.h"
+#include "utils.h"
 #include "Blob.h"
 #include "ofxAnimationPrimitives.h"
 #include "InputImageController.h"
-#include "FlowTools.h"
 #include "BlobDataController.h"
-
-typedef const vector<BaseImagesInterface*> baseimages_type;
 
 class VisualBlobs
 {
-    baseimages_type mImages;
+    BaseImagesInterface* mImages;
     const float mWidth;
     const float mHeight;
     ofFbo mFbo;
@@ -29,7 +26,7 @@ class VisualBlobs
     BlobsDataController* mBlobData;
     
 public:
-    VisualBlobs(baseimages_type& baseImageInterfacePtr, const float width, const float height);
+    VisualBlobs(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height);
     void update();
     void rendering();
     
@@ -60,11 +57,7 @@ public:
     static ofFbo    smFbo;
     static float    smWidth;
     static float    smHeight;
-    static ofRectangle smRemapedRect;
     static ofImage  smWashiImage;
-    static FlowTools* smFlowTools;
     
     static void setupFbo(float w, float h);
-    static ofTexture& getJoinedTexture(baseimages_type& images, float width, float height, TargetTexture targetTexture);
-    static void getJoinedContourseBlob(baseimages_type& images, vector<ofxCvBlob>& dst, float width, float height);
 };

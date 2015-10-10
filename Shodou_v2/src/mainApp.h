@@ -1,6 +1,6 @@
 #include "ofMain.h"
-#include "../../common/utils.h"
-#include "../../common/constants.h"
+#include "utils.h"
+#include "constants.h"
 #include "InputImageController.h"
 #include "BlobDataController.h"
 #include "VisualBlobs.h"
@@ -11,18 +11,15 @@
 class mainApp : public ofBaseApp
 {
 #ifdef USE_CAMERA
-    vector<InputImageController<ofVideoGrabber>*>   mInputImage;
+    InputImageController<ofVideoGrabber>   *mInputImage;
 #else
-    vector<InputImageController<ofVideoPlayer>*>    mInputImage;
+    InputImageController<ofVideoPlayer>    *mInputImage;
 #endif
     
-    vector<BaseImagesInterface*> mBaseImages; // for visual
-    
-    BlobsDataController     mBDC;
+    BlobsDataController     *mBlobDataController;
     VisualBlobs             *mVisualBlob;
     
     enum mode { ON_SCREEN, PRE_PROCESS, BLOB_CONTROLL, } mMode;
-    enum scan_mode { MANUAL, AUTO } mScanMode;
     
     // parameter for imageprocessing
     ofxPanel gui;
