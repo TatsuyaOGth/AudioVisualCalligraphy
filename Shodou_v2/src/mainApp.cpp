@@ -215,7 +215,7 @@ void mainApp::keyPressed(int key)
         case '2': mMode = PRE_PROCESS; break;
         case '3': mMode = BLOB_CONTROLL; break;
             
-        case '0': bDrawGui = !bDrawGui; break;
+        case ' ': bDrawGui = !bDrawGui; break;
             
             // sequencer
         case 'q': mBlobDataController->sequencerTogglePlay(0); break;

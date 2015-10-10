@@ -233,10 +233,29 @@ protected:
     BaseImagesInterface* mImages;
     const float mWidth;
     const float mHeight;
+    ofFbo mFbo;
     
     int getFadeAlpha()
     {
         return ofxAnimationPrimitives::Easing::Quint::easeOut(getAlpha()) * 255;
+    }
+    
+    void bufferBegin()
+    {
+        ofPushStyle();
+        ofPushMatrix();
+        mFbo.begin();
+        ofClear(0, 0, 0, 0);
+    }
+    
+    void bufferEnd()
+    {
+        mFbo.end();
+        ofPopMatrix();
+        ofPopStyle();
+        
+        ofSetColor(255, getFadeAlpha());
+        mFbo.draw(0, 0, mWidth, mHeight);
     }
     
 public:
@@ -244,7 +263,9 @@ public:
     : mImages(baseImageInterfacePtr)
     , mWidth(width)
     , mHeight(height)
-    {}
+    {
+        mFbo.allocate(mWidth, mHeight, GL_RGBA);
+    }
 };
 
 
@@ -261,8 +282,12 @@ public:
     }
     void draw()
     {
-        ofSetColor(255, getFadeAlpha());
-        mImages->getGrayTextureRef().draw(0, 0, ofGetWidth(), ofGetHeight());
+        bufferBegin();
+        
+        mImages->getWarpedTextureRef().draw(0, 0, mWidth, mHeight);
+        mImages->getCvContourFinder().draw(0, 0, mWidth, mHeight);
+        
+        bufferEnd();
     }
     
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneGray);
@@ -285,8 +310,12 @@ public:
     }
     void draw()
     {
-        ofSetColor(255, getFadeAlpha());
-        mImages->getBinaryTextureRef().draw(0, 0, ofGetWidth(), ofGetHeight());
+        bufferBegin();
+        
+        mImages->getBinaryTextureRef().draw(0, 0, mWidth, mHeight);
+        mImages->getCvContourFinder().draw(0, 0, mWidth, mHeight);
+        
+        bufferEnd();
     }
     
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneBinary);
@@ -295,9 +324,6 @@ public:
 //-----------------------------------------------------------------------------------------------
 class SceneVfx : public BaseScene
 {
-    vector<ofxCvBlob> mBlobs;
-    
-    
 public:
     SceneVfx(BaseImagesInterface* baseImageInterfacePtr, const float width, const float height)
     : BaseScene(baseImageInterfacePtr, width, height)
@@ -308,18 +334,23 @@ public:
     }
     void draw()
     {
-        ofSetColor(255, getFadeAlpha());
+        bufferBegin();
         
-//        VisualBlobs::getJoinedContourseBlob(mImages, mBlobs, ofGetWidth(), ofGetHeight());
-//        for (auto e : mBlobs)
-//        {
-//            ofNoFill();
-//            ofBeginShape();
-//            for (int i = 0; i < e.nPts; i++){
-//                ofVertex(e.pts[i].x, e.pts[i].y);
-//            }
-//            ofEndShape(true);
-//        }
+        float w = mImages->getCvContourFinder().getWidth();
+        float h = mImages->getCvContourFinder().getHeight();
+        for (auto e : mImages->getCvContourFinder().blobs)
+        {
+            ofNoFill();
+            ofBeginShape();
+            for (int i = 0; i < e.nPts; i++){
+                float x = ofMap(e.pts[i].x, 0, w, 0, mWidth);
+                float y = ofMap(e.pts[i].y, 0, h, 0, mHeight);
+                ofVertex(x, y);
+            }
+            ofEndShape(true);
+        }
+        
+        bufferEnd();
     }
     OFX_ANIMATION_PRIMITIVES_DEFINE_SCENE(SceneVfx);
 };
@@ -351,7 +382,6 @@ VisualBlobs::VisualBlobs(BaseImagesInterface* baseImageInterfacePtr, const float
     mScenes.addScene<SceneGray>(baseImageInterfacePtr, width, height);
     mScenes.addScene<SceneBinary>(baseImageInterfacePtr, width, height);
     mScenes.addScene<SceneVfx>(baseImageInterfacePtr, width, height);
-    mScenes.addScene<EmptyScene>();
 
     mSceneNames = mScenes.getSceneNames();
     mCurrentNumScene = 0;
@@ -371,8 +401,8 @@ void VisualBlobs::update()
 
 void VisualBlobs::rendering()
 {
-    glClearColor(0, 0, 0, 0);
     mFbo.begin();
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     ofBackground(0);
@@ -380,7 +410,7 @@ void VisualBlobs::rendering()
     
     mScenes.draw();
     mAnimations.draw();
-    mBlobData->drawSeqAll(0, 0, ofGetWidth(), ofGetHeight());
+    mBlobData->drawSeqAll(0, 0, smWidth, smHeight);
     
     mFbo.end();
 }
