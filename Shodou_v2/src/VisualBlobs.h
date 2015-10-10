@@ -7,8 +7,19 @@
 #include "InputImageController.h"
 #include "BlobDataController.h"
 
+class TwinkBlob;
+class BlobEdge;
+class ParticleBlobEdge;
+class RippleBlob;
+
+
 class VisualBlobs
 {
+    friend class TwinkBlob;
+    friend class BlobEdge;
+    friend class ParticleBlobEdge;
+    friend class RippleBlob;
+    
     BaseImagesInterface* mImages;
     const float mWidth;
     const float mHeight;
@@ -53,11 +64,6 @@ public:
     //---------
     
     enum TargetTexture { GRAY, BINARY };
-    
-    static ofFbo    smFbo;
-    static float    smWidth;
-    static float    smHeight;
-    static ofImage  smWashiImage;
     
     static void setupFbo(float w, float h);
 };

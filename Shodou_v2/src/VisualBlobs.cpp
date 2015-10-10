@@ -1,25 +1,6 @@
 #include "VisualBlobs.h"
 
 
-//---------
-// static shared value and function
-//---------
-
-ofFbo    VisualBlobs::smFbo;
-float    VisualBlobs::smWidth;
-float    VisualBlobs::smHeight;
-ofImage  VisualBlobs::smWashiImage;
-
-
-void VisualBlobs::setupFbo(float w, float h)
-{
-    if (!smFbo.isAllocated() || smFbo.getWidth() != w || smFbo.getHeight() != h)
-    {
-        smFbo.allocate(w, h, GL_RGBA);
-    }
-}
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  ANIMATION CLASS
@@ -29,10 +10,11 @@ void VisualBlobs::setupFbo(float w, float h)
 class BaseAnimation : public ofxAnimationPrimitives::Instance
 {
 protected:
+    const VisualBlobs* mMain;
     BLOB_TYPE mBlob;
     
 public:
-    BaseAnimation(const BLOB_TYPE& blob)
+    BaseAnimation(const VisualBlobs* main, const BLOB_TYPE& blob) : mMain(main)
     {
         mBlob = BLOB_TYPE(new Blob(blob.get()));
     }
@@ -49,8 +31,8 @@ class TwinkBlob : public BaseAnimation
     ofColor mCol;
     
 public:
-    TwinkBlob(const BLOB_TYPE& blob, ofColor col)
-    : BaseAnimation(blob)
+    TwinkBlob(const VisualBlobs* main, const BLOB_TYPE& blob, ofColor col)
+    : BaseAnimation(main, blob)
     , mCol(col)
     {
     }
@@ -62,10 +44,10 @@ public:
         ofBeginShape();
         for (const auto& p : mBlob->pts)
         {
-            ofVertex(p.x * ofGetWidth()  + ofRandom(-1, 1),
-                     p.y * ofGetHeight() + ofRandom(-1, 1));
+            ofVertex(p.x * mMain->mWidth  + ofRandom(-1, 1),
+                     p.y * mMain->mHeight + ofRandom(-1, 1));
         }
-        ofEndShape();
+        ofEndShape(true);
     }
 };
 
@@ -76,14 +58,14 @@ class BlobEdge : public BaseAnimation
     ofVboMesh mMesh;
     
 public:
-    BlobEdge(const BLOB_TYPE& blob, ofColor col)
-    : BaseAnimation(blob)
+    BlobEdge(const VisualBlobs* main, const BLOB_TYPE& blob, ofColor col)
+    : BaseAnimation(main, blob)
     , mCol(col)
     {
         for (const auto& p : mBlob->pts)
         {
             mMesh.addColor(ofColor::fromHsb(mCol.getHue() + ofRandom(-20, 20), mCol.getSaturation(), mCol.getBrightness()));
-            mMesh.addVertex(ofPoint(p.x * ofGetWidth(), p.y * ofGetHeight()));
+            mMesh.addVertex(ofPoint(p.x * mMain->mWidth, p.y * mMain->mHeight));
         }
         mMesh.setMode(OF_PRIMITIVE_LINE_LOOP);
     }
@@ -136,8 +118,8 @@ class ParticleBlobEdge : public BaseAnimation
     int mNum;
     
 public:
-    ParticleBlobEdge(const BLOB_TYPE& blob, ofColor col)
-    : BaseAnimation(blob)
+    ParticleBlobEdge(const VisualBlobs* main, const BLOB_TYPE& blob, ofColor col)
+    : BaseAnimation(main, blob)
     , mCol(col)
     {
         mValiation = 0;
@@ -174,50 +156,6 @@ public:
     }
 };
 
-
-
-class RippleBlob : public ofxAnimationPrimitives::Instance
-{
-    ofVec2f mPos;
-    float mBeginSize, mEndSize;
-    float mFadeinTime, mFadeoutTime;
-    
-public:
-    RippleBlob(float w, float h, float beginSize, float endSize, float fadeinTime, float fadeoutTime)
-    : mPos(ofVec2f(w, h))
-    , mBeginSize(beginSize)
-    , mEndSize(endSize)
-    , mFadeinTime(fadeinTime)
-    , mFadeoutTime(fadeoutTime)
-    {}
-    
-    void draw()
-    {
-        float r = mBeginSize + mEndSize * getOneMinusLife();
-        int a = getFadeAlpha(mFadeinTime, mFadeoutTime) * 80;
-        ofPushStyle();
-        ofNoFill();
-        ofSetColor(0, a);
-        ofSetLineWidth(4);
-        ofCircle(mPos, r);
-        ofPopStyle();
-    }
-    
-    float getFadeAlpha(float fadeinTime, float fadeoutTime)
-    {
-        float duration = getDuration();
-        float life = getLife() * duration;
-        
-        if (life > duration - fadeinTime)
-        {
-            return ofMap(life, duration - fadeinTime, duration, 1, 0);
-        }
-        else if (life < fadeoutTime) {
-            return ofMap(life, 0, fadeoutTime, 0, 1);
-        }
-        return 1;
-    }
-};
 
 
 
@@ -386,12 +324,7 @@ VisualBlobs::VisualBlobs(BaseImagesInterface* baseImageInterfacePtr, const float
     mSceneNames = mScenes.getSceneNames();
     mCurrentNumScene = 0;
     mScenes.changeScene(mSceneNames[mCurrentNumScene], 2);
-    
-    // setup static velues
-    smWidth = width;
-    smHeight = height;
-    smWashiImage.loadImage("washi.png");
-    }
+}
 
 void VisualBlobs::update()
 {
@@ -410,7 +343,7 @@ void VisualBlobs::rendering()
     
     mScenes.draw();
     mAnimations.draw();
-    mBlobData->drawSeqAll(0, 0, smWidth, smHeight);
+    mBlobData->drawSeqAll(0, 0, mWidth, mHeight);
     
     mFbo.end();
 }
@@ -429,31 +362,31 @@ void VisualBlobs::blobNoteEvent(BlobNoteEvent &e)
 {
     if (e.channel == 1)
     {
-        mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor(255, 255, 255))->play(6);
+        mAnimations.createInstance<TwinkBlob>(this, e.blobPtr, ofColor(255, 255, 255))->play(6);
     }
     
     if (e.channel == 2)
     {
-        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(6);
+        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor(255, 255, 255))->play(6);
     }
     
     if (e.channel == 3)
     {
-        mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor::fromHsb(ofRandom(255), 255, 255))->play(6);
+        mAnimations.createInstance<TwinkBlob>(this, e.blobPtr, ofColor::fromHsb(ofRandom(255), 255, 255))->play(6);
         
     }
     if (e.channel == 4)
     {
-        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(3);
-        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(4, 0.5);
+        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(3);
+        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor::fromHsb(ofRandom(180, 200), 255, 255))->play(4, 0.5);
     }
     if (e.channel == 5)
     {
-        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(6);
+        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor(255, 255, 255))->play(6);
     }
     if (e.channel == 6)
     {
-        mAnimations.createInstance<TwinkBlob>(e.blobPtr, ofColor::fromHsb(ofRandom(255), 120, 255))->play(9);
-        mAnimations.createInstance<BlobEdge>(e.blobPtr, ofColor(255, 255, 255))->play(9);
+        mAnimations.createInstance<TwinkBlob>(this, e.blobPtr, ofColor::fromHsb(ofRandom(255), 120, 255))->play(9);
+        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor(255, 255, 255))->play(9);
     }
 }

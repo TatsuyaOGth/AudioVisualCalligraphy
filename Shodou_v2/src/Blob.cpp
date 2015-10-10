@@ -8,7 +8,7 @@ Blob::Blob(const ofxCvBlob& blob, float w, float h, float offsetW)
 
 Blob::Blob(const Blob* o)
 {
-    setup(*o, o->width, o->height, o->offsetW);
+    setup(*o, 1, 1, o->offsetW);
 }
 
 void Blob::setup(const ofxCvBlob& blob, float w, float h, float offsetW)
