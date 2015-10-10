@@ -24,7 +24,6 @@ static const int CAMERA_HEIGHT    = 720;
 // VIDEO
 //------------------------------------------------------------------------------
 static const string SOURCE_VIDEO[] = {"movie/sample.mp4"};
-static const int START_POSITION = 0.5;
 
 
 // MIDI
