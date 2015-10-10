@@ -158,7 +158,7 @@ protected:
         mBinaryPix.setFromPixels(mCvGrayImage.getPixels(), mCvGrayImage.getWidth(), mCvGrayImage.getHeight(), 1);
         
         mCvGrayImage.setFromPixels(mBinaryPix);
-        mContourFinder.findContours(mCvGrayImage, 0, 800*800, 127, true, true);
+        mContourFinder.findContours(mCvGrayImage, 1, 800*800, 127, true, true);
         
         textureLoadData(mGrayPix,       mGrayTex);
         textureLoadData(mResizedPix,    mResizedTex);

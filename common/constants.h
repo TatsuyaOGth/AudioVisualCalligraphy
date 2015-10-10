@@ -3,19 +3,19 @@
 
 // GENERAL
 //------------------------------------------------------------------------------
-#define USE_CAMERA
+//#define USE_CAMERA
 
-static const int        NUM_INPUT = 2;
+static const int        NUM_INPUT = 1;
 
-static const int        VISUAL_WINDOW_WIDTH  = 1280;
-static const int        VISUAL_WINDOW_HEIGHT = 720;
+static const int        VISUAL_WINDOW_WIDTH  = 1440;
+static const int        VISUAL_WINDOW_HEIGHT = 900;
 static const string     MAIN_DISP_SERVER_NAME = "syphone";
 
 
 // CAMERA
 //------------------------------------------------------------------------------
 static const int NUM_CAMERA = NUM_INPUT;
-static const int CAMERA_DEVISE_ID[] = {0, 1};
+static const int CAMERA_DEVISE_ID[] = {0};
 static const int CAMERA_WIDTH     = 1280;
 static const int CAMERA_HEIGHT    = 720;
 
@@ -23,7 +23,7 @@ static const int CAMERA_HEIGHT    = 720;
 
 // VIDEO
 //------------------------------------------------------------------------------
-static const string SOURCE_VIDEO[] = {"movie/test.mov", "movie/test_mini.mov"};
+static const string SOURCE_VIDEO[] = {"movie/sample.mp4"};
 static const int START_POSITION = 0.5;
 
 
