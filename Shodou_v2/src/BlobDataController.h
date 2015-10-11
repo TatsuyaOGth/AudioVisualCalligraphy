@@ -72,7 +72,6 @@ public:
     void setSequencer(float tempo, int time){ mTempo = tempo, mTime = time; }
     void setSize(float w, float h){ mWidth = w, mHeight = h; }
     
-    
     // send midi messages
     
     static void sendNote(const BLOB_TYPE& blob, float duration, int channel)
@@ -83,13 +82,20 @@ public:
         int pan  = ofMap(blob->centroid.x, 0, 1, 0, 127, true);
         int area = ofMap(blob->area, 0, 0.01, 0, 127, true);
         float length = ofMap(blob->length, 0, 200, 0.25, 8, true);
-        
-        //        LOG_DEBUG << length;
-        
+                
         MIDI_SENDER->makeNote(note, velo, channel, duration * length);
         MIDI_SENDER->ctlOut(10, pan, channel);
         MIDI_SENDER->ctlOut(102, area, channel);
-        //        MIDI_SENDER->ctlOut(103, length, channel);
+        //MIDI_SENDER->ctlOut(103, length, channel);
+    }
+    
+    static void sendNote(int note, int velo, float duration, int channel, int pan = -1)
+    {
+        MIDI_SENDER->makeNote(note, velo, channel, duration);
+        if (pan != -1)
+        {
+            MIDI_SENDER->ctlOut(10, pan, channel);
+        }
     }
 };
 

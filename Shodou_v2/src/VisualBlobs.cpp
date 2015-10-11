@@ -367,12 +367,12 @@ void VisualBlobs::blobNoteEvent(BlobNoteEvent &e)
     
     if (e.channel == 2)
     {
-        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor(255, 255, 255))->play(6);
+        mAnimations.createInstance<BlobEdge>(this, e.blobPtr, ofColor(255, 255, 255))->play(1.5);
     }
     
     if (e.channel == 3)
     {
-        mAnimations.createInstance<TwinkBlob>(this, e.blobPtr, ofColor::fromHsb(ofRandom(255), 255, 255))->play(6);
+        mAnimations.createInstance<TwinkBlob>(this, e.blobPtr, ofColor::fromHsb(ofRandom(255), 255, 255))->play(0.5);
         
     }
     if (e.channel == 4)

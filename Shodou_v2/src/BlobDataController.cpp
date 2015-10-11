@@ -28,16 +28,20 @@ void VerticalSequencer::emit(const BLOBS_TYPE& blobs)
 {
     float y1 = ofMap(mLastPos, 0, mLoopTime, 0, mHeight);
     float y2 = ofMap(mPos,     0, mLoopTime, 0, mHeight);
+    
     for (const auto& e : blobs)
     {
         if (e->hole) continue;
-        const ofPoint& pos = e->centroid;
-        if (pos.y > y1 && pos.y <= y2)
+        
+        for (const auto& p : e->pts)
         {
-            Sequencer::sendNote(e, 0.5, mChannel);
-            sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&e, mCol)->play(0.5);
-            BlobNoteEvent event(e, mChannel);
-            ofNotifyEvent(mBlobNoteEvent, event, this);
+            if (p.y > y1 && p.y <= y2)
+            {
+                int note = ofMap(p.x, 0, mWidth, 24, 96, true);
+                int velo = ofMap(e->area, 0, 0.01, 20, 90, true);
+                int pan  = ofMap(e->centroid.x, 0, mWidth, 0, 127, true);
+                Sequencer::sendNote(note, velo, 0.2, mChannel, pan);
+            }
         }
     }
 }
