@@ -183,6 +183,38 @@ namespace ImageProcessing
 //        }
 //        return true;
 //    }
+    
+    static void limitBrightness(ofPixels& srcPixRef, ofPixels& dstPixRef, int threshold)
+    {
+        const int w = srcPixRef.getWidth();
+        const int h = srcPixRef.getHeight();
+        
+        if (dstPixRef.isAllocated() == false ||
+            srcPixRef.getWidth()  != dstPixRef.getWidth() ||
+            srcPixRef.getHeight() != dstPixRef.getWidth() ||
+            dstPixRef.getImageType() != OF_IMAGE_GRAYSCALE)
+        {
+            dstPixRef.allocate(w, h, OF_IMAGE_GRAYSCALE);
+        }
+        
+        unsigned char* spx = srcPixRef.getPixels();
+        unsigned char* dpx = dstPixRef.getPixels();
+        const int ch = MIN(srcPixRef.getNumChannels(), 3);
+        
+        for (int i = 0; i < w * h; ++i)
+        {
+            unsigned char max = 0;
+            for (int j = 0; j < ch; ++j)
+            {
+                if (max < spx[i*ch+j]) max = spx[i*ch+j];
+            }
+            if (max < threshold)
+            {
+                dpx[i] = max;
+            }
+            else dpx[i] = 255;
+        }
+    }
 }
 
 namespace imp = ImageProcessing;

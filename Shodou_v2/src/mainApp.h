@@ -6,7 +6,7 @@
 #include "VisualBlobs.h"
 #include "ImageProcessing.hpp"
 #include "ofxGui.h"
-#include "ofxSyphon.h"
+#include "MidiSenderController.hpp"
 
 class mainApp : public ofBaseApp
 {

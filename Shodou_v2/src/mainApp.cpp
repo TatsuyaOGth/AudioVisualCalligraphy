@@ -122,10 +122,10 @@ void mainApp::drawPreProcess()
     
     float offsetY = 0;
     auto& e = mInputImage;
-    float w = e->getResizedPixelsRef().getWidth();
-    float h = e->getResizedPixelsRef().getHeight();
+    float w = e->getLimitedPixRef().getWidth();
+    float h = e->getLimitedPixRef().getHeight();
     float x = w * 0;
-    e->getResizedTextureRef().draw(x, 0, w, h);
+    e->getLimitedTexRef().draw(x, 0, w, h);
     e->drawCropRect(x, 0, w, h);
     offsetY += h;
     e->getCropedTextureRef().draw(x, offsetY);

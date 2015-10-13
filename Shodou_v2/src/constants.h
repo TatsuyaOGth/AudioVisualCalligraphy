@@ -3,7 +3,7 @@
 
 // GENERAL
 //------------------------------------------------------------------------------
-//#define USE_CAMERA
+#define USE_CAMERA
 
 static const int        VISUAL_WINDOW_WIDTH  = 1440;
 static const int        VISUAL_WINDOW_HEIGHT = 900;

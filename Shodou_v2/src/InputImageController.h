@@ -7,8 +7,8 @@
 class BaseImagesInterface
 {
 protected:
-    ofPixels    mFlipedPix, mGrayPix, mResizedPix, mCropedPix, mWarpedPix, mBinaryPix;
-    ofTexture   mFlipedTex, mGrayTex, mResizedTex, mCropedTex, mWarpedTex, mBinaryTex;
+    ofPixels    mFlipedPix, mGrayPix, mResizedPix, mLimitedPix, mCropedPix, mWarpedPix, mBinaryPix;
+    ofTexture   mFlipedTex, mGrayTex, mResizedTex, mLimitedTex, mCropedTex, mWarpedTex, mBinaryTex;
     
     ofxCvColorImage         mCvImage;
     ofxCvGrayscaleImage     mCvGrayImage;
@@ -18,12 +18,14 @@ public:
     
     ofPixels& getGrayPixelsRef()      { return mGrayPix;    }
     ofPixels& getResizedPixelsRef()   { return mResizedPix; }
+    ofPixels& getLimitedPixRef()      { return mLimitedPix; }
     ofPixels& getCropedPixelsRef()    { return mCropedPix;  }
     ofPixels& getWarpedPixelsRef()    { return mWarpedPix;  }
     ofPixels& getBinaryPixelsRef()    { return mBinaryPix;  }
     
     ofTexture& getGrayTextureRef()    { return mGrayTex;    }
     ofTexture& getResizedTextureRef() { return mResizedTex; }
+    ofTexture& getLimitedTexRef()     { return mLimitedTex; }
     ofTexture& getCropedTextureRef()  { return mCropedTex;  }
     ofTexture& getWarpedTextureRef()  { return mWarpedTex;  }
     ofTexture& getBinaryTextureRef()  { return mBinaryTex;  }
@@ -42,6 +44,7 @@ protected:
     ofParameter<int>        mResizeRatio;
     ofParameter<bool>       mFlipH;
     ofParameter<bool>       mFlipV;
+    ofParameter<int>        mBlackThreshold;
     ofParameter<ofVec2f>    mCropXY1;
     ofParameter<ofVec2f>    mCropXY2;
     ofParameter<float>      mWarpX;
@@ -55,6 +58,7 @@ protected:
         string idxStr = "_" + ofToString(idx);
         mParamGroup.setName("INPUT_IMAGE" + idxStr);
         mParamGroup.add(mResizeRatio.set("RESIZE_RATIO" + idxStr, 2, 1, 4));
+        mParamGroup.add(mBlackThreshold.set("BLACK_THRESHOLD" + idxStr, 50, 0, 255));
         mParamGroup.add(mFlipH.set("FLIP_HORIZON" + idxStr, true));
         mParamGroup.add(mFlipV.set("FLIP_VERTICAL" + idxStr, true));
         mParamGroup.add(mCropXY1.set("CROP_XY_1" + idxStr, ofVec2f(0, 0), ofVec2f(0, 0), ofVec2f(1, 1)));
@@ -123,6 +127,7 @@ protected:
     {
         allocatePixels(mFlipedPix, w, h, 3);
         allocatePixels(mGrayPix, w, h, 1);
+        allocatePixels(mLimitedPix, w, h, 1);
         allocatePixels(mResizedPix, w, h, 1);
         allocatePixels(mCropedPix, w, h, 1);
         allocatePixels(mWarpedPix, w, h, 1);
@@ -130,6 +135,7 @@ protected:
         
         allocateTexture(mFlipedTex, w, h, 3);
         allocateTexture(mGrayTex, w, h, 1);
+        allocateTexture(mLimitedTex, w, h, 1);
         allocateTexture(mResizedTex, w, h, 1);
         allocateTexture(mCropedTex, w, h, 1);
         allocateTexture(mWarpedTex, w, h, 1);
@@ -144,7 +150,8 @@ protected:
         imp::flip(srcPix, mFlipedPix, mFlipH, mFlipV);
         imp::rgbToGray(mFlipedPix, mGrayPix);
         imp::resize(mGrayPix, mResizedPix, srcPix.getWidth() / mResizeRatio, srcPix.getHeight() / mResizeRatio);
-        imp::crop(mResizedPix, mCropedPix,
+        imp::limitBrightness(mResizedPix, mLimitedPix, mBlackThreshold);
+        imp::crop(mLimitedPix, mCropedPix,
                   mCropXY1->x * mResizedPix.getWidth(), mCropXY1->y * mResizedPix.getHeight(),
                   mCropXY2->x * mResizedPix.getWidth(), mCropXY2->y * mResizedPix.getHeight());
         
@@ -160,6 +167,7 @@ protected:
         
         textureLoadData(mGrayPix,       mGrayTex);
         textureLoadData(mResizedPix,    mResizedTex);
+        textureLoadData(mLimitedPix,    mLimitedTex);
         textureLoadData(mCropedPix,     mCropedTex);
         textureLoadData(mWarpedPix,     mWarpedTex);
         textureLoadData(mBinaryPix,     mBinaryTex);
