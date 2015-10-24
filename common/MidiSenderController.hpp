@@ -73,10 +73,10 @@ public:
         mCurrentPgm = pgm;
     }
     
-    void makeNote(int note, int velo, int channel, float duration, float after = 0)
+    void makeNote(int note, int velo, int channel, float duration)
     {
         if (channel != 0) mChannel = channel;
-        mMidi.createInstance<Note>(&mMidiOut, note, velo, mChannel)->play(duration, after);
+        mMidi.createInstance<Note>(&mMidiOut, note, velo, mChannel)->play(duration);
     }
     
     void ctlOut(int cc, int value, int channel = 0)

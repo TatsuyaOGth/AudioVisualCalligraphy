@@ -179,6 +179,8 @@ void mainApp::drawInfomationText(float x, float y)
     stringstream s;
     s << "frame rate: " << ofGetFrameRate() << endl;
     s << "number of blobs: " << mBlobDataController->getBlobsRef().size() << endl;
+    s << mBlobDataController->getSequencerInfomationText() << endl;
+    
     ofSetColor(0, 255, 0);
     ofDrawBitmapString(s.str(), x, y);
     ofPopStyle();

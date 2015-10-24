@@ -81,9 +81,8 @@ public:
         // option
         int pan  = ofMap(blob->centroid.x, 0, 1, 0, 127, true);
         int area = ofMap(blob->area, 0, 0.01, 0, 127, true);
-        float length = ofMap(blob->length, 0, 200, 0.25, 8, true);
                 
-        MIDI_SENDER->makeNote(note, velo, channel, duration * length);
+        MIDI_SENDER->makeNote(note, velo, channel, duration);
         MIDI_SENDER->ctlOut(10, pan, channel);
         MIDI_SENDER->ctlOut(102, area, channel);
         //MIDI_SENDER->ctlOut(103, length, channel);
@@ -142,13 +141,14 @@ class RandomSequencer : public Sequencer
     float mDurationToNext;
     int mCurrentIndex;
     bool bPlay;
+    bool bLoop;
     float mMaxDurationToNext;
     int mChannel;
     ofColor mCol;
     ofPoint mLastPos, mTargetPos;
     
 public:
-    RandomSequencer(float maxDurationToNext, int channel, ofColor col);
+    RandomSequencer(float maxDurationToNext, bool loop, int channel, ofColor col);
     void setup();
     void update(float tick);
     void emit(const BLOBS_TYPE& blobs);
@@ -190,4 +190,6 @@ public:
     
     void drawSeq(int index, int x, int y, int w, int h);
     void drawSeqAll(int x, int y, int w, int h);
+    
+    string getSequencerInfomationText();
 };

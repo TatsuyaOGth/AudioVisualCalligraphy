@@ -98,7 +98,7 @@ void OrdinalSequencer::emit(const BLOBS_TYPE& blobs)
         if (blobs.empty() || mCurrentIndex >= blobs.size()) return;
         // send midi
         Sequencer::sendNote(blobs[mCurrentIndex], mMaxDurationToNext, mChannel);
-        sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(0.5);
+        sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(mDurationToNext);
         // notify event
         BlobNoteEvent event(blobs[mCurrentIndex], mChannel);
         ofNotifyEvent(mBlobNoteEvent, event, this);
@@ -151,11 +151,12 @@ void OrdinalSequencer::draw(int x, int y, int w, int h)
 
 //-----------------------------------------------------------------------------------------------
 
-RandomSequencer::RandomSequencer(float maxDurationToNext, int channel, ofColor col)
+RandomSequencer::RandomSequencer(float maxDurationToNext, bool loop, int channel, ofColor col)
 {
     mMaxDurationToNext = maxDurationToNext;
     mChannel = channel;
     mCol.set(col);
+    bLoop = loop;
     setup();
 }
 
@@ -190,7 +191,7 @@ void RandomSequencer::emit(const BLOBS_TYPE& blobs)
         
         // send midi
         Sequencer::sendNote(blobs[mCurrentIndex], mMaxDurationToNext, mChannel);
-        sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(0.5);
+        sequencerAnimation::manager.createInstance<sequencerAnimation::BlobDrawr>(&blobs[mCurrentIndex], mCol)->play(mDurationToNext);
         
         // notify event
         BlobNoteEvent event(blobs[mCurrentIndex], mChannel);
@@ -231,14 +232,14 @@ void RandomSequencer::draw(int x, int y, int w, int h)
 BlobsDataController::BlobsDataController()
 {
     float pct = 1.8;
-    mSeq.push_back(new VerticalSequencer(4 * pct, 1, ofColor(0, 255, 255)));
-    mSeq.push_back(new VerticalSequencer(2 * pct, 2, ofColor(255, 0, 255)));
-    mSeq.push_back(new OrdinalSequencer(0.25  * pct, true, 3, ofColor(127, 255, 0)));
-    mSeq.push_back(new OrdinalSequencer(1.00 * pct, true, 4, ofColor(255, 127, 0)));
-    mSeq.push_back(new RandomSequencer(0.125 * pct, 5, ofColor(255, 127, 255)));
-    mSeq.push_back(new OrdinalSequencer(2.00 * pct, true, 6, ofColor(0, 0, 255)));
-    
-    mSeq.push_back(new OrdinalSequencer(0.50, false, 9, ofColor(255, 255, 0)));
+    mSeq.push_back(new VerticalSequencer(4 * pct, 1, ofColor(90)));
+    mSeq.push_back(new VerticalSequencer(2 * pct, 2, ofColor(127)));
+    mSeq.push_back(new OrdinalSequencer(0.25  * pct, true, 3, ofColor(255, 255, 255)));
+    mSeq.push_back(new OrdinalSequencer(0.5 * pct, true, 4, ofColor(255, 127, 0)));
+    mSeq.push_back(new RandomSequencer(0.0625 * pct, true, 5, ofColor(255, 127, 255)));
+    mSeq.push_back(new OrdinalSequencer(1.00 * pct, true, 6, ofColor(0, 0, 255)));
+    mSeq.push_back(new OrdinalSequencer(0.50, false, 7, ofColor(255, 255, 0)));
+    mSeq.push_back(new VerticalSequencer(1 * pct, 8, ofColor(180)));
     
     for (auto& e : mSeq)
     {
@@ -376,4 +377,15 @@ void BlobsDataController::drawSeqAll(int x, int y, int w, int h)
     {
         e->draw(x, y, w, h);
     }
+}
+
+string BlobsDataController::getSequencerInfomationText()
+{
+    stringstream s;
+    s << "play seq: ";
+    for (const auto& e : mSeq)
+    {
+        s << e->bPlaying << " ";
+    }
+    return s.str();
 }
